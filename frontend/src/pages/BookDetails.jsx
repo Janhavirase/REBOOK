@@ -20,14 +20,14 @@ const BookDetails = () => {
         setLoading(true);
         
         // A. Get Main Book Details
-        const { data: mainBook } = await axios.get(`http://localhost:5000/api/books/${id}`);
+        const { data: mainBook } = await axios.get(`https://rebook-unyc.onrender.com/api/books/${id}`);
         setBook(mainBook);
 
         // B. Get Similar Books (If category exists)
         if (mainBook.category) {
             try {
                 const { data: related } = await axios.get(
-                    `http://localhost:5000/api/books/similar/${id}/${mainBook.category}`
+                    `https://rebook-unyc.onrender.com/api/books/similar/${id}/${mainBook.category}`
                 );
                 setSimilarBooks(related);
             } catch (err) {

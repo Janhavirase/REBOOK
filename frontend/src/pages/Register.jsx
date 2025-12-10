@@ -32,7 +32,7 @@ const Register = () => {
           phone: "+91" + formData.phone 
       };
 
-      const res = await axios.post('http://localhost:5000/api/users/register', payload);
+      const res = await axios.post('https://rebook-unyc.onrender.com/api/users/register', payload);
       
       localStorage.setItem('userInfo', JSON.stringify(res.data));
       

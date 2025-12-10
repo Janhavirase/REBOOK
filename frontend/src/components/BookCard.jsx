@@ -43,7 +43,7 @@ const BookCard = ({ book }) => {
     const toastId = toast.loading("Adding to cart...");
 
     try {
-        await axios.post(`http://localhost:5000/api/users/cart/${book._id}`, {}, {
+        await axios.post(`https://rebook-unyc.onrender.com/api/users/cart/${book._id}`, {}, {
             headers: { Authorization: `Bearer ${userInfo.token}` }
         });
         

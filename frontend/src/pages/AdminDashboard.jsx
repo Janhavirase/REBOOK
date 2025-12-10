@@ -32,13 +32,13 @@ const AdminDashboard = () => {
       const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
 
       try {
-        const msgRes = await axios.get('http://localhost:5000/api/messages', config);
+        const msgRes = await axios.get('https://rebook-unyc.onrender.com/api/messages', config);
         setMessages(msgRes.data);
 
-        const bookRes = await axios.get('http://localhost:5000/api/books');
+        const bookRes = await axios.get('https://rebook-unyc.onrender.com/api/books');
         setBooks(bookRes.data);
 
-        const userRes = await axios.get('http://localhost:5000/api/users', config);
+        const userRes = await axios.get('https://rebook-unyc.onrender.com/api/users', config);
         setUsers(userRes.data);
 
       } catch (error) { toast.error("Error fetching dashboard data"); }
@@ -89,15 +89,15 @@ const AdminDashboard = () => {
     
     try {
         if (modal.type === 'message') {
-            await axios.delete(`http://localhost:5000/api/messages/${modal.id}`, config);
+            await axios.delete(`https://rebook-unyc.onrender.com/api/messages/${modal.id}`, config);
             setMessages(messages.filter(m => m._id !== modal.id));
             toast.success("Message deleted successfully");
         } else if (modal.type === 'book') {
-            await axios.delete(`http://localhost:5000/api/books/${modal.id}`, config);
+            await axios.delete(`https://rebook-unyc.onrender.com/api/books/${modal.id}`, config);
             setBooks(books.filter(b => b._id !== modal.id));
             toast.success("Listing removed from marketplace");
         } else if (modal.type === 'user') {
-            await axios.delete(`http://localhost:5000/api/users/${modal.id}`, config);
+            await axios.delete(`https://rebook-unyc.onrender.com/api/users/${modal.id}`, config);
             setUsers(users.filter(u => u._id !== modal.id));
             toast.success("User has been banned");
         }

@@ -90,7 +90,7 @@ const SellBook = () => {
     data.append('image', image); 
 
     try {
-      await axios.post('http://localhost:5000/api/books/sell', data, {
+      await axios.post('https://rebook-unyc.onrender.com/api/books/sell', data, {
         headers: { 'Content-Type': 'multipart/form-data', 'Authorization': `Bearer ${token}` },
       });
 

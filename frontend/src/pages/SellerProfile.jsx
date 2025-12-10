@@ -19,7 +19,7 @@ const SellerProfile = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data } = await axios.get(`http://localhost:5000/api/users/profile/${id}`);
+        const { data } = await axios.get(`https://rebook-unyc.onrender.com/api/users/profile/${id}`);
         setProfile(data.user);
         setBooks(data.books);
         setReviews(data.reviews);
@@ -34,7 +34,7 @@ const SellerProfile = () => {
     if (!currentUser) return alert("Login to write a review");
 
     try {
-        await axios.post(`http://localhost:5000/api/users/${id}/reviews`, 
+        await axios.post(`https://rebook-unyc.onrender.com/api/users/${id}/reviews`, 
             { rating, comment },
             { headers: { Authorization: `Bearer ${currentUser.token}` } }
         );

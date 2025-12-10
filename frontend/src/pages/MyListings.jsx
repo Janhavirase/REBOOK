@@ -15,7 +15,7 @@ const MyListings = () => {
       const token = JSON.parse(userInfo).token;
 
       try {
-        const { data } = await axios.get('http://localhost:5000/api/books/my-books', {
+        const { data } = await axios.get('https://rebook-unyc.onrender.com/api/books/my-books', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setBooks(data);
@@ -36,7 +36,7 @@ const MyListings = () => {
       const token = JSON.parse(userInfo).token;
 
       try {
-        await axios.delete(`http://localhost:5000/api/books/${id}`, {
+        await axios.delete(`https://rebook-unyc.onrender.com/api/books/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         // Remove the deleted item from the state immediately

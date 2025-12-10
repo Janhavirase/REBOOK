@@ -15,7 +15,7 @@ const Cart = () => {
       const token = JSON.parse(userInfo).token;
 
       try {
-        const { data } = await axios.get('http://localhost:5000/api/users/cart', {
+        const { data } = await axios.get('https://rebook-unyc.onrender.com/api/users/cart', {
             headers: { Authorization: `Bearer ${token}` }
         });
         setCartItems(data);
@@ -34,7 +34,7 @@ const Cart = () => {
       const token = JSON.parse(userInfo).token;
 
       try {
-          await axios.delete(`http://localhost:5000/api/users/cart/${bookId}`, {
+          await axios.delete(`https://rebook-unyc.onrender.com/api/users/cart/${bookId}`, {
              headers: { Authorization: `Bearer ${token}` }
           });
           // Update UI instantly

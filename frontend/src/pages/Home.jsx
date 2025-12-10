@@ -38,7 +38,7 @@ const Home = () => {
 
   useEffect(() => {
     const fetchBooks = async () => {
-      let apiUrl = 'http://localhost:5000/api/books';
+      let apiUrl = 'https://rebook-unyc.onrender.com/api/books';
       
       try {
         setLoading(true);

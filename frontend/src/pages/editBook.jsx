@@ -26,7 +26,7 @@ const editBook = () => {
   useEffect(() => {
     const fetchBook = async () => {
       try {
-        const { data } = await axios.get(`http://localhost:5000/api/books`);
+        const { data } = await axios.get(`https://rebook-unyc.onrender.com/api/books`);
         // Note: Ideally you should have a 'getSingleBook' API, but filtering locally works for now
         const book = data.find((b) => b._id === id);
         
@@ -75,7 +75,7 @@ const editBook = () => {
     }
 
     try {
-      await axios.put(`http://localhost:5000/api/books/${id}`, data, {
+      await axios.put(`https://rebook-unyc.onrender.com/api/books/${id}`, data, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`

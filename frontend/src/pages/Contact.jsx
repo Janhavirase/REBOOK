@@ -9,7 +9,7 @@ const Contact = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/messages', formData);
+      await axios.post('https://rebook-unyc.onrender.com/api/messages', formData);
       setStatus('✅ Message sent! We will contact you soon.');
       setFormData({ name: '', email: '', subject: '', message: '' }); // Clear form
     } catch (error) {

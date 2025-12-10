@@ -16,7 +16,7 @@ const ViewAllBooks = () => {
 
   useEffect(() => {
     const fetchBooks = async () => {
-      let url = 'http://localhost:5000/api/books';
+      let url = 'https://rebook-unyc.onrender.com/api/books';
       setLoading(true);
 
       // 1. Handle "Nearby" - Needs GPS
