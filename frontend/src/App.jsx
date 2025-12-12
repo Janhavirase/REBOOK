@@ -6,7 +6,7 @@ import { AnimatePresence } from 'framer-motion';
 // Components
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
-
+import ChatBot from './components/ChatBot'; // <--- Import
 // Pages
 import Home from './pages/Home';
 import SellBook from './pages/SellBook';
@@ -117,6 +117,7 @@ function App() {
     <Router>
       <Toaster position="top-center" reverseOrder={false} />
       <AppContent />
+      <ChatBot />
     </Router>
   );
 }

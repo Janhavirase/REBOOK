@@ -15,7 +15,9 @@ const SellBook = () => {
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
-  
+  const [aiLoading, setAiLoading] = useState(false);
+  const [priceLoading, setPriceLoading] = useState(false);
+  const [estimatedPrice, setEstimatedPrice] = useState(null);
   const [lat, setLat] = useState('');
   const [lng, setLng] = useState('');
   const [locationStatus, setLocationStatus] = useState('');
@@ -107,8 +109,52 @@ const SellBook = () => {
       setLoading(false);
     }
   };
+// Feature 1: Description Generator
+  const handleAiDescription = async () => {
+    if (!formData.title) return toast.error("Enter a Title first!");
+    setAiLoading(true);
+    const toastId = toast.loading("Asking Gemini...");
+    
+    try {
+       // Replace with your URL variable if needed
+       const res = await axios.post('http://localhost:5000/api/ai/generate-description', {
+          title: formData.title,
+          author: formData.author,
+          condition: formData.condition,
+          category: formData.category
+       });
+       setFormData({ ...formData, description: res.data.description });
+       toast.success("Written for you! ✍️", { id: toastId });
+    } catch (err) {
+       toast.error("AI failed. Try manual.", { id: toastId });
+    } finally {
+       setAiLoading(false);
+    }
+  };
 
+  // Feature 2: Price Estimator
+  const handleAiPrice = async () => {
+    if (!formData.title) return toast.error("Enter a Title first!");
+    setPriceLoading(true);
+    const toastId = toast.loading("Analyzing market rates...");
+
+    try {
+       const res = await axios.post('http://localhost:5000/api/ai/estimate-price', {
+          title: formData.title,
+          author: formData.author,
+          condition: formData.condition
+       });
+       setEstimatedPrice(res.data.priceRange);
+       toast.success("Price Estimated! 💰", { id: toastId });
+    } catch (err) {
+       toast.error("Could not estimate.", { id: toastId });
+    } finally {
+       setPriceLoading(false);
+    }
+  };
+  // --- AI LOGIC END ---
   return (
+    
     <PageTransition>
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       {/* Professional Header Strip */}
@@ -154,14 +200,30 @@ const SellBook = () => {
              <h3 className="text-slate-800 font-bold text-lg border-b border-gray-100 pb-2">2. Offer & Pricing</h3>
              
              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                {/* --- AI PRICE ESTIMATOR --- */}
                 <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-1">Your Price <span className="text-red-500">*</span></label>
+                    
+                    {/* Suggestion Badge */}
+                    {estimatedPrice && (
+                        <div className="mb-2 text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded border border-emerald-200 animate-pulse font-medium">
+                           💡 Market Rate: {estimatedPrice}
+                        </div>
+                    )}
+
                     <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500 text-sm">
                             <FaRupeeSign />
                         </div>
                         <input type="number" name="price" placeholder="0.00" onChange={handleChange} required 
-                          className="w-full p-2.5 pl-8 bg-white border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm outline-none text-sm font-bold text-gray-900" />
+                          className="w-full p-2.5 pl-8 pr-24 bg-white border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm outline-none text-sm font-bold text-gray-900" />
+                        
+                        {/* Estimate Button */}
+                        <button type="button" onClick={handleAiPrice} disabled={priceLoading}
+                           className="absolute right-1 top-1 bottom-1 px-3 bg-slate-100 text-slate-600 border-l border-gray-200 text-xs font-bold rounded-r-md hover:bg-slate-200 transition">
+                           {priceLoading ? "Analyzing..." : "⚖️ Estimate"}
+                        </button>
                     </div>
                 </div>
                 
@@ -191,9 +253,16 @@ const SellBook = () => {
                 </div>
              </div>
 
+             {/* --- AI DESCRIPTION GENERATOR --- */}
              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Product Description</label>
-                <textarea name="description" placeholder="Describe the item condition, edition, etc." onChange={handleChange} rows="3"
+                <div className="flex justify-between items-center mb-1">
+                    <label className="block text-sm font-semibold text-gray-700">Product Description</label>
+                    <button type="button" onClick={handleAiDescription} disabled={aiLoading}
+                        className="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full font-bold border border-indigo-100 hover:bg-indigo-100 transition flex items-center gap-1">
+                        {aiLoading ? "Writing..." : "✨ Auto-Write with AI"}
+                    </button>
+                </div>
+                <textarea name="description" value={formData.description} placeholder="Describe the item condition, edition, etc." onChange={handleChange} rows="3"
                     className="w-full p-2.5 bg-white border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm outline-none resize-none text-sm text-gray-900"></textarea>
              </div>
           </div>
@@ -279,6 +348,7 @@ const SellBook = () => {
     </div>
     </PageTransition>
   );
+  
 };
 
 export default SellBook;
