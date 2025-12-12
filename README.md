@@ -81,7 +81,7 @@ Create a .env file in the frontend folder:
 
 Code snippet
 
-VITE_API_URL=http://localhost:5000
+VITE_API_URL=https://rebook-unyc.onrender.com
 Start the React app:
 
 Bash

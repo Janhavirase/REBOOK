@@ -117,7 +117,7 @@ const SellBook = () => {
     
     try {
        // Replace with your URL variable if needed
-       const res = await axios.post('http://localhost:5000/api/ai/generate-description', {
+       const res = await axios.post('https://rebook-unyc.onrender.com/api/ai/generate-description', {
           title: formData.title,
           author: formData.author,
           condition: formData.condition,
@@ -139,7 +139,7 @@ const SellBook = () => {
     const toastId = toast.loading("Analyzing market rates...");
 
     try {
-       const res = await axios.post('http://localhost:5000/api/ai/estimate-price', {
+       const res = await axios.post('https://rebook-unyc.onrender.com/api/ai/estimate-price', {
           title: formData.title,
           author: formData.author,
           condition: formData.condition
