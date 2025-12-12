@@ -20,7 +20,7 @@ const ChatBot = () => {
     setLoading(true);
 
     try {
-      const res = await axios.post('http://localhost:5000/api/ai/chat', { message: input });
+      const res = await axios.post('https://rebook-unyc.onrender.com/api/ai/chat', { message: input });
       setMessages(prev => [...prev, { text: res.data.reply, sender: "bot" }]);
     } catch (err) {
       setMessages(prev => [...prev, { text: "My brain is offline 😴", sender: "bot" }]);
