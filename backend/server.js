@@ -13,7 +13,14 @@ const app = express();
 // 2. Connect to Database (This function will now look for process.env.MONGO_URI)
 connectDB(); 
 // <--- 2. USE THIS MIDDLEWARE (Allow Frontend to talk to Backend)
-app.use(cors());
+app.use(cors({
+    origin: [
+        "http://localhost:5173",
+         // Your old link (keep it if you want)
+        "https://rebook-xi.vercel.app"        // <--- ADD THIS ONE! (From your error log)
+    ],
+    credentials: true
+}));
 app.use(express.json());
 
 // Routes
