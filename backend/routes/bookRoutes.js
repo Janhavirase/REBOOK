@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { protect } = require("../middleware/authMiddleware");
 const { upload } = require("../config/cloudinary"); 
-
+const cacheBooks = require('../middleware/cacheMiddleware');
 // Import Controller Functions 
 const { 
     getBooks, 
@@ -17,6 +17,7 @@ const {
 // --- ROUTES ---
 
 // 1. Get all books (Public - Home Page)
+router.route('/').get(cacheBooks, getBooks).post(protect, upload.single('image'), createBook);
 router.get('/', getBooks);
 
 // 2. Get logged-in user's books (Private - My Listings)

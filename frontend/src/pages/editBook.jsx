@@ -7,6 +7,7 @@ const editBook = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rebook-unyc.onrender.com';
 
   // Form State
   const [formData, setFormData] = useState({
@@ -26,7 +27,7 @@ const editBook = () => {
   useEffect(() => {
     const fetchBook = async () => {
       try {
-        const { data } = await axios.get(`https://rebook-unyc.onrender.com/api/books`);
+        const { data } = await axios.get(`${API_BASE_URL}/api/books`);
         // Note: Ideally you should have a 'getSingleBook' API, but filtering locally works for now
         const book = data.find((b) => b._id === id);
         
@@ -75,7 +76,7 @@ const editBook = () => {
     }
 
     try {
-      await axios.put(`https://rebook-unyc.onrender.com/api/books/${id}`, data, {
+      await axios.put(`${API_BASE_URL}/api/books/${id}`, data, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`

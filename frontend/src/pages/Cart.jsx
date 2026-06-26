@@ -6,6 +6,7 @@ import PageTransition from '../components/PageTransition'; // <--- Import
 const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rebook-unyc.onrender.com';
 
   // 1. Fetch Cart Items
   useEffect(() => {
@@ -15,7 +16,7 @@ const Cart = () => {
       const token = JSON.parse(userInfo).token;
 
       try {
-        const { data } = await axios.get('https://rebook-unyc.onrender.com/api/users/cart', {
+        const { data } = await axios.get(`${API_BASE_URL}/api/users/cart`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         setCartItems(data);
@@ -34,7 +35,7 @@ const Cart = () => {
       const token = JSON.parse(userInfo).token;
 
       try {
-          await axios.delete(`https://rebook-unyc.onrender.com/api/users/cart/${bookId}`, {
+          await axios.delete(`${API_BASE_URL}/api/users/cart/${bookId}`, {
              headers: { Authorization: `Bearer ${token}` }
           });
           // Update UI instantly

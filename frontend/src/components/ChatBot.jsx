@@ -9,6 +9,7 @@ const ChatBot = () => {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rebook-unyc.onrender.com';
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -20,7 +21,7 @@ const ChatBot = () => {
     setLoading(true);
 
     try {
-      const res = await axios.post('https://rebook-unyc.onrender.com/api/ai/chat', { message: input });
+      const res = await axios.post(`${API_BASE_URL}/api/ai/chat`, { message: input });
       setMessages(prev => [...prev, { text: res.data.reply, sender: "bot" }]);
     } catch (err) {
       setMessages(prev => [...prev, { text: "My brain is offline 😴", sender: "bot" }]);

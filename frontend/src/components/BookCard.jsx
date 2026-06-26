@@ -13,6 +13,7 @@ const formatDistance = (meters) => {
 
 const BookCard = ({ book }) => {
   const navigate = useNavigate(); // <--- 2. Initialize Hook
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rebook-unyc.onrender.com';
 
   const handleAddToCart = async (e) => {
     // 1. Stop the click from triggering the <Link> parent
@@ -43,7 +44,7 @@ const BookCard = ({ book }) => {
     const toastId = toast.loading("Adding to cart...");
 
     try {
-        await axios.post(`https://rebook-unyc.onrender.com/api/users/cart/${book._id}`, {}, {
+        await axios.post(`${API_BASE_URL}/api/users/cart/${book._id}`, {}, {
             headers: { Authorization: `Bearer ${userInfo.token}` }
         });
         

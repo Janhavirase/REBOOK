@@ -9,6 +9,7 @@ const ViewAllBooks = () => {
   const [searchParams] = useSearchParams();
   const type = searchParams.get('type'); // 'nearby' or 'recent'
   const category = searchParams.get('category'); // 'Education', etc.
+     const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rebook-unyc.onrender.com';
 
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,7 +17,7 @@ const ViewAllBooks = () => {
 
   useEffect(() => {
     const fetchBooks = async () => {
-      let url = 'https://rebook-unyc.onrender.com/api/books';
+      let url = `${API_BASE_URL}/api/books`;
       setLoading(true);
 
       // 1. Handle "Nearby" - Needs GPS

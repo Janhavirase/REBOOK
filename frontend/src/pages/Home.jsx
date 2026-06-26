@@ -12,7 +12,8 @@ const Home = () => {
   const [nearbyBooks, setNearbyBooks] = useState([]);
   const [recentBooks, setRecentBooks] = useState([]); 
   const [searchResults, setSearchResults] = useState([]); 
-  
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rebook-unyc.onrender.com';
+
   // --- Live Search States ---
   const [suggestions, setSuggestions] = useState([]); 
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -38,7 +39,7 @@ const Home = () => {
 
   useEffect(() => {
     const fetchBooks = async () => {
-      let apiUrl = 'https://rebook-unyc.onrender.com/api/books';
+      let apiUrl = `${API_BASE_URL}/api/books`;
       
       try {
         setLoading(true);

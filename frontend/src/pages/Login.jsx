@@ -8,6 +8,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rebook-unyc.onrender.com';
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -17,7 +18,7 @@ const Login = () => {
     const toastId = toast.loading('Verifying credentials...');
 
     try {
-      const res = await axios.post('https://rebook-unyc.onrender.com/api/users/login', { email, password });
+      const res = await axios.post(`${API_BASE_URL}/api/users/login`, { email, password });
       
       localStorage.setItem('userInfo', JSON.stringify(res.data));
       

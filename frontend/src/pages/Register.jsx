@@ -11,7 +11,8 @@ const Register = () => {
     phone: '', 
     password: '' 
   });
-  
+   const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rebook-unyc.onrender.com';
+ 
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -32,7 +33,7 @@ const Register = () => {
           phone: "+91" + formData.phone 
       };
 
-      const res = await axios.post('https://rebook-unyc.onrender.com/api/users/register', payload);
+      const res = await axios.post(`${API_BASE_URL}/api/users/register`, payload);
       
       localStorage.setItem('userInfo', JSON.stringify(res.data));
       

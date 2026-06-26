@@ -5,6 +5,7 @@ import PageTransition from '../components/PageTransition'; // <--- Import
 const MyListings = () => {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rebook-unyc.onrender.com';
 
   // 1. Fetch the user's books on load
   useEffect(() => {
@@ -15,7 +16,7 @@ const MyListings = () => {
       const token = JSON.parse(userInfo).token;
 
       try {
-        const { data } = await axios.get('https://rebook-unyc.onrender.com/api/books/my-books', {
+        const { data } = await axios.get(`${API_BASE_URL}/api/books/my-books`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setBooks(data);
@@ -36,7 +37,7 @@ const MyListings = () => {
       const token = JSON.parse(userInfo).token;
 
       try {
-        await axios.delete(`https://rebook-unyc.onrender.com/api/books/${id}`, {
+        await axios.delete(`${API_BASE_URL}/api/books/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         // Remove the deleted item from the state immediately

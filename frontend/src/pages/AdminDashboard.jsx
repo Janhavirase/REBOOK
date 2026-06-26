@@ -6,6 +6,12 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { ToastContainer, toast } from 'react-toastify'; // <--- NEW IMPORT
 import PageTransition from '../components/PageTransition';
 import 'react-toastify/dist/ReactToastify.css'; // <--- CSS IMPORT
+
+// --- SENIOR DEV BEST PRACTICE: DYNAMIC ENVIRONMENT URL ---
+// If you have a .env file locally, it uses that. 
+// If it's deployed to Render/Vercel, it defaults to the production URL.
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rebook-unyc.onrender.com';
+
 const AdminDashboard = () => {
   const [messages, setMessages] = useState([]);
   const [books, setBooks] = useState([]); 
@@ -32,13 +38,14 @@ const AdminDashboard = () => {
       const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
 
       try {
-        const msgRes = await axios.get('https://rebook-unyc.onrender.com/api/messages', config);
+        // --- UPDATED TO USE DYNAMIC URL ---
+        const msgRes = await axios.get(`${API_BASE_URL}/api/messages`, config);
         setMessages(msgRes.data);
 
-        const bookRes = await axios.get('https://rebook-unyc.onrender.com/api/books');
+        const bookRes = await axios.get(`${API_BASE_URL}/api/books`);
         setBooks(bookRes.data);
 
-        const userRes = await axios.get('https://rebook-unyc.onrender.com/api/users', config);
+        const userRes = await axios.get(`${API_BASE_URL}/api/users`, config);
         setUsers(userRes.data);
 
       } catch (error) { toast.error("Error fetching dashboard data"); }
@@ -89,15 +96,18 @@ const AdminDashboard = () => {
     
     try {
         if (modal.type === 'message') {
-            await axios.delete(`https://rebook-unyc.onrender.com/api/messages/${modal.id}`, config);
+            // --- UPDATED TO USE DYNAMIC URL ---
+            await axios.delete(`${API_BASE_URL}/api/messages/${modal.id}`, config);
             setMessages(messages.filter(m => m._id !== modal.id));
             toast.success("Message deleted successfully");
         } else if (modal.type === 'book') {
-            await axios.delete(`https://rebook-unyc.onrender.com/api/books/${modal.id}`, config);
+            // --- UPDATED TO USE DYNAMIC URL ---
+            await axios.delete(`${API_BASE_URL}/api/books/${modal.id}`, config);
             setBooks(books.filter(b => b._id !== modal.id));
             toast.success("Listing removed from marketplace");
         } else if (modal.type === 'user') {
-            await axios.delete(`https://rebook-unyc.onrender.com/api/users/${modal.id}`, config);
+            // --- UPDATED TO USE DYNAMIC URL ---
+            await axios.delete(`${API_BASE_URL}/api/users/${modal.id}`, config);
             setUsers(users.filter(u => u._id !== modal.id));
             toast.success("User has been banned");
         }
