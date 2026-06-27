@@ -1,6 +1,7 @@
 const Book = require('../models/Book');
 const cloudinary = require('../config/cloudinary'); 
 const redisClient = require('../config/redis');
+
 // @desc    Get all books (Sorted by Distance if Location provided, else by Date)
 // @route   GET /api/books?lat=12.34&lng=56.78
 const getBooks = async (req, res) => {
@@ -19,7 +20,9 @@ const getBooks = async (req, res) => {
             maxDistance: 500000, // Search within 500km radius
             spherical: true
           }
-        },
+        }
+        /* 🚨 MICROSERVICE FIX: The User DB is on Port 4002, so we cannot run lookups here!
+        ,
         {
             $lookup: {
                 from: "users", 
@@ -29,7 +32,9 @@ const getBooks = async (req, res) => {
             }
         },
         { $unwind: "$seller" } 
+        */
       ]);
+      
       if (req.redisKey) {
           await redisClient.setEx(req.redisKey, 300, JSON.stringify(books));
       }
@@ -37,14 +42,13 @@ const getBooks = async (req, res) => {
     }
 
     // --- OPTION 2: NORMAL FETCH (Recent First) ---
- // --- OPTION 2: NORMAL FETCH (Recent First) ---
     // We introduce pagination: Default to page 1, fetch 10 books at a time
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10; 
     const startIndex = (page - 1) * limit;
 
     const books = await Book.find()
-        .populate('seller', 'name email')
+        /* .populate('seller', 'name email') 🚨 MICROSERVICE FIX: User schema doesn't exist here */
         .sort({ createdAt: -1 })
         .skip(startIndex)
         .limit(limit); // <-- This is the magic bullet
@@ -64,7 +68,7 @@ const getBooks = async (req, res) => {
 // @route   GET /api/books/:id
 const getBookById = async (req, res) => {
   try {
-    const book = await Book.findById(req.params.id).populate('seller', 'name email phone');
+    const book = await Book.findById(req.params.id) /* .populate('seller', 'name email phone') 🚨 MICROSERVICE FIX */;
 
     if (!book) {
       return res.status(404).json({ message: 'Book not found' });
@@ -75,7 +79,19 @@ const getBookById = async (req, res) => {
     res.status(500).json({ message: 'Server Error fetching book details' });
   }
 };
+// @desc    Get all books by a specific seller
+// @route   GET /seller/:id
+const getBooksBySeller = async (req, res) => {
+  try {
+    const books = await Book.find({ seller: req.params.id }).sort({ createdAt: -1 });
+    res.json(books);
+  } catch (error) {
+    console.error("Error fetching seller books:", error);
+    res.status(500).json({ message: 'Server Error fetching seller books' });
+  }
+};
 
+// Don't forget to add getBooksBySeller to your module.exports at the very bottom!
 // --- NEW FUNCTION: Get Similar Books ---
 // @desc    Get similar books (Same category, excluding current)
 // @route   GET /api/books/similar/:id/:category
@@ -224,5 +240,6 @@ module.exports = {
   deleteBook, 
   updateBook, 
   getBookById,
-  getSimilarBooks // <--- Added this to exports
+  getSimilarBooks, // <--- Added this to exports
+  getBooksBySeller
 };

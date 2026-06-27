@@ -1,4 +1,6 @@
 // rebook-auth-service/server.js
+const axios = require('axios');
+const Review = require('./models/Review');
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -7,7 +9,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Outbox = require('./models/Outbox');
 const relay=require('./workers/relayWorker');
-
 // 🚨 NEW: Import Joi Validation Middleware & Schemas
 const validateRequest = require('./middlewares/validateRequest');
 const { registerSchema, loginSchema } = require('./validation/authSchemas');
@@ -80,6 +81,109 @@ app.post('/login', validateRequest(loginSchema), async (req, res) => {
             res.status(401).json({ message: 'Invalid email or password' });
         }
     } catch (error) { res.status(500).json({ message: 'Server Error' }); }
+});
+
+// --- NEW ROUTE: Get Public Profile ---
+
+// --- MICROSERVICE AGGREGATOR: Get Public Profile ---
+app.get('/profile/:id', async (req, res) => {
+    try {
+        // 1. Fetch the User from the Auth Database
+        const user = await User.findById(req.params.id).select('-password -cart');
+        
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // 2. Fetch the Books from the Catalog Microservice (Network Join)
+        let books = [];
+        try {
+            // The Auth service internally calls the Catalog service on Port 4003
+            const bookResponse = await axios.get(`http://localhost:4003/seller/${req.params.id}`);
+            books = bookResponse.data;
+        } catch (bookError) {
+            console.error("⚠️ Catalog Service unreachable. Loading profile without books.");
+            // We don't crash the server here, we just return an empty array for books so the profile still loads!
+        }
+
+        // 3. Fetch the Reviews (Apply the exact same pattern!)
+      // 3. Fetch the Reviews (Direct DB call with population)
+        let reviews = [];
+        try {
+            reviews = await Review.find({ targetUser: req.params.id })
+                                  .populate('reviewer', 'name')
+                                  .sort({ createdAt: -1 });
+        } catch (reviewErr) {
+            console.error("Error fetching reviews:", reviewErr);
+        }
+
+        // 4. Send the combined "Monolith-Style" response back to the React Frontend
+        res.json({ user, books, reviews });
+
+    } catch (error) {
+        console.error("Error fetching user profile:", error);
+        res.status(500).json({ message: 'Server Error fetching profile' });
+    }
+});
+
+// --- SUBMIT REVIEW ROUTE ---
+// --- JWT PROTECTION MIDDLEWARE ---
+const protect = async (req, res, next) => {
+    let token;
+    
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        try {
+            // 1. Extract the token from the header
+            token = req.headers.authorization.split(' ')[1];
+            
+            // 2. Decode the token using your secret
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            
+            // 3. Find the user in the database and attach to req.user
+            req.user = await User.findById(decoded.id).select('-password');
+            
+            // 🚨 CRITICAL: Pass the baton to the next function so it doesn't 504!
+            return next(); 
+        } catch (error) {
+            console.error("Token verification failed:", error.message);
+            return res.status(401).json({ message: 'Not authorized, token failed' });
+        }
+    }
+
+    if (!token) {
+        return res.status(401).json({ message: 'Not authorized, no token provided' });
+    }
+};
+// IMPORTANT: Adjust the path ('/:id/reviews' or '/profile/:id/reviews') to match your React Axios call perfectly.
+app.post('/:id/reviews', protect, async (req, res) => {
+  const { rating, comment } = req.body;
+  const sellerId = req.params.id;
+
+  try {
+    // 1. Check for self-review
+    if (req.user._id.toString() === sellerId) {
+        return res.status(400).json({ message: 'You cannot review yourself' });
+    }
+
+    // 2. Check for duplicate review
+    const alreadyReviewed = await Review.findOne({ reviewer: req.user._id, targetUser: sellerId });
+    if (alreadyReviewed) {
+        return res.status(400).json({ message: 'You already reviewed this seller' });
+    }
+
+    // 3. Create the review
+    await Review.create({
+        reviewer: req.user._id,
+        targetUser: sellerId,
+        rating: Number(rating),
+        comment
+    });
+
+    res.status(201).json({ message: 'Review Added' });
+  } catch (error) {
+    console.error("Error adding review:", error);
+    res.status(500).json({ message: 'Server Error adding review' });
+  }
 });
 
 app.delete('/:id', async (req, res) => {    // 1. Start a database session

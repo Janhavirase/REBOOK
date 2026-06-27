@@ -35,7 +35,7 @@ const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:4001'; //
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:4002';
 const MONOLITH_URL = process.env.MONOLITH_URL || 'http://localhost:5000';
 const CATALOG_SERVICE_URL = process.env.CATALOG_SERVICE_URL || 'http://localhost:4003';
-
+const CART_SERVICE_URL = process.env.CART_SERVICE_URL || 'http://localhost:4004';
 // 1. AI SERVICE ROUTE
 app.use('/api/ai', createProxyMiddleware({
     target: AI_SERVICE_URL,
@@ -46,24 +46,40 @@ app.use('/api/ai', createProxyMiddleware({
 // 2. THE OPTION A SPLIT (Auth Interception)
 // The gateway mounts at /api/users, so req.path becomes just '/login' or '/cart'
 // 2. THE OPTION A SPLIT (Auth Interception)
-app.use('/api/users', (req, res, next) => {
-    // If it is Login, Register, OR a DELETE request -> Send to Auth Service (4002)
-    if (req.path === '/login' || req.path === '/register' || req.method === 'DELETE') {
-        return createProxyMiddleware({
-            target: AUTH_SERVICE_URL,
-            changeOrigin: true,
-            logger: console
-        })(req, res, next);
-    }
-    // If it's anything else (/cart, /profile), skip this and go to the Monolith
-    next(); 
-});
+// app.use('/api/users', (req, res, next) => {
+//     // If it is Login, Register, OR a DELETE request -> Send to Auth Service (4002)
+//     if (req.path === '/login' || req.path === '/register' || req.method === 'DELETE') {
+//         return createProxyMiddleware({
+//             target: AUTH_SERVICE_URL,
+//             changeOrigin: true,
+//             logger: console
+//         })(req, res, next);
+//     }
+//     // If it's anything else (/cart, /profile), skip this and go to the Monolith
+//     next(); 
+// });
+// 2. ALL USER TRAFFIC -> AUTH SERVICE (Port 4002)
+app.use('/api/users', createProxyMiddleware({
+    target: AUTH_SERVICE_URL,
+    changeOrigin: true,
+    logger: console
+}));
+
+
 // 3C. Catalog Service Interception
 app.use('/api/books', createProxyMiddleware({
     target: CATALOG_SERVICE_URL,
     changeOrigin: true,
     logger: console
 }));
+
+// 3D. Cart Service Interception
+app.use('/api/cart', createProxyMiddleware({
+    target: CART_SERVICE_URL,
+    changeOrigin: true,
+    logger: console
+}));
+
 // 3. CATCH-ALL (Monolith Fallback)
 app.use('/', createProxyMiddleware({
     target: MONOLITH_URL,

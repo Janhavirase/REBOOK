@@ -29,8 +29,8 @@ const registerSchema = Joi.object({
         }),
 
     phone: Joi.string()
-        .pattern(/^[0-9]{10,12}$/)
-        .required()
+              .pattern(/^\+?[0-9]{10,12}$/)  
+                    .required()
         .messages({
             'string.pattern.base': 'Phone number must be a valid numerical length of 10 to 12 digits'
         }),

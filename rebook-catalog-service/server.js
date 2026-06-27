@@ -18,8 +18,12 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Mount the Book Routes
 const bookRoutes = require('./routes/bookRoutes');
-app.use('/api/books', bookRoutes);
+app.use('/', bookRoutes);
 
+
+
+const listenForEvents = require('./workers/messageConsumer');
+listenForEvents();
 // Start Service
 const PORT = process.env.PORT || 4003;
 app.listen(PORT, () => {
