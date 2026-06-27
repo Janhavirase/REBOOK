@@ -1,4 +1,4 @@
-const Book = require('../models/Book');
+const Book = require('../models/book');
 const cloudinary = require('../config/cloudinary'); 
 const redisClient = require('../config/redis');
 

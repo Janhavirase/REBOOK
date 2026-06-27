@@ -1,4 +1,5 @@
 // rebook-catalog-service/server.js
+const { consumePaymentEvents } = require('./workers/paymentWorker');
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -13,8 +14,13 @@ app.use(express.json());
 
 // Connect to Database
 mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('📦 Catalog Service connected to MongoDB'))
-    .catch(err => console.log(err));
+    .then(async () => {
+        console.log('📦 Catalog Service connected to MongoDB');
+        
+        // 3. START CONSUMER HERE: Ensures DB is ready before RabbitMQ starts listening
+        await consumePaymentEvents(); 
+    })
+    .catch(err => console.error("Database Connection Error:", err));
 
 // Mount the Book Routes
 const bookRoutes = require('./routes/bookRoutes');

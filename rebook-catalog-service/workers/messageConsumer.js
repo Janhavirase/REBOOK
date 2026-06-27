@@ -1,6 +1,6 @@
 // rebook-catalog-service/workers/messageConsumer.js
 const amqp = require('amqplib');
-const Book = require('../models/Book');
+const Book = require('../models/book');
 
 const listenForEvents = async () => {
     try {

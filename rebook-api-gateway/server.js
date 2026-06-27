@@ -36,6 +36,7 @@ const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:4002'
 const MONOLITH_URL = process.env.MONOLITH_URL || 'http://localhost:5000';
 const CATALOG_SERVICE_URL = process.env.CATALOG_SERVICE_URL || 'http://localhost:4003';
 const CART_SERVICE_URL = process.env.CART_SERVICE_URL || 'http://localhost:4004';
+const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL || 'http://localhost:4006';
 // 1. AI SERVICE ROUTE
 app.use('/api/ai', createProxyMiddleware({
     target: AI_SERVICE_URL,
@@ -43,6 +44,12 @@ app.use('/api/ai', createProxyMiddleware({
     logger: console
 }));
 
+
+app.use('/api/payment', createProxyMiddleware({
+    target: PAYMENT_SERVICE_URL,
+    changeOrigin: true,
+    logger: console
+}));
 // 2. THE OPTION A SPLIT (Auth Interception)
 // The gateway mounts at /api/users, so req.path becomes just '/login' or '/cart'
 // 2. THE OPTION A SPLIT (Auth Interception)
