@@ -1,0 +1,34 @@
+name: Auth Service CI
+
+# 1. When does this run?
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'rebook-auth-service/**' # ONLY run if files in this folder changed!
+
+# 2. What jobs should the robot do?
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    # A. Get the code from GitHub
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # B. Set up Node.js
+    - name: Setup Node.js 20
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+
+    # C. Go into the specific microservice folder and install dependencies
+    - name: Install Dependencies
+      working-directory: ./rebook-auth-service
+      run: npm ci
+
+    # D. Run your tests (if you wrote any!)
+    - name: Run Unit Tests
+      working-directory: ./rebook-auth-service
+      run: npm test
