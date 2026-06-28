@@ -1,5 +1,5 @@
 # Use a lightweight Node.js image
-FROM node:22-alpine
+FROM node:20
 
 # Set the environment to production
 ENV NODE_ENV=production
