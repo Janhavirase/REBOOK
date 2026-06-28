@@ -154,6 +154,26 @@ const protect = async (req, res, next) => {
         return res.status(401).json({ message: 'Not authorized, no token provided' });
     }
 };
+
+// Add this middleware right below your `protect` middleware in auth-service
+const admin = (req, res, next) => {
+    if (req.user && req.user.isAdmin) {
+        next();
+    } else {
+        res.status(401).json({ message: 'Not authorized as an admin' });
+    }
+};
+
+// Add the missing Admin route
+app.get('/users', protect, admin, async (req, res) => {
+    try {
+        const users = await User.find({});
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error fetching users' });
+    }
+});
+
 // IMPORTANT: Adjust the path ('/:id/reviews' or '/profile/:id/reviews') to match your React Axios call perfectly.
 app.post('/:id/reviews', protect, async (req, res) => {
   const { rating, comment } = req.body;
@@ -186,8 +206,7 @@ app.post('/:id/reviews', protect, async (req, res) => {
   }
 });
 
-app.delete('/:id', async (req, res) => {    // 1. Start a database session
-    const session = await mongoose.startSession();
+app.delete('/:id', protect, admin, async (req, res) => {    const session = await mongoose.startSession();
     session.startTransaction();
 
     try {

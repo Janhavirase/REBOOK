@@ -76,6 +76,20 @@ app.delete('/:userId', async (req, res) => {
     res.json({ message: 'Cart cleared successfully' });
 });
 
+// --- 🗑️ ROUTE: REMOVE SINGLE ITEM FROM CART ---
+app.post('/remove', async (req, res) => {
+    try {
+        const { userId, bookId } = req.body;
+        const cartKey = `cart:${userId}`;
+
+        // sRem removes a specific value from the Redis Set
+        await redisClient.sRem(cartKey, bookId);
+
+        res.json({ message: 'Book removed from cart' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to remove item from cart' });
+    }
+});
 const PORT = process.env.PORT || 4004;
 app.listen(PORT, () => {
     console.log(`🛒 ReBook Cart Microservice running on Port ${PORT}`);

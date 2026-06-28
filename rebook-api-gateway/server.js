@@ -36,6 +36,7 @@ const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:4002'
 const MONOLITH_URL = process.env.MONOLITH_URL || 'http://localhost:5000';
 const CATALOG_SERVICE_URL = process.env.CATALOG_SERVICE_URL || 'http://localhost:4003';
 const CART_SERVICE_URL = process.env.CART_SERVICE_URL || 'http://localhost:4004';
+const MESSAGE_SERVICE_URL = process.env.MESSAGE_SERVICE_URL || 'http://localhost:4005';
 const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL || 'http://localhost:4006';
 // 1. AI SERVICE ROUTE
 app.use('/api/ai', createProxyMiddleware({
@@ -50,6 +51,14 @@ app.use('/api/payment', createProxyMiddleware({
     changeOrigin: true,
     logger: console
 }));
+
+// 3E. Message Service Interception
+app.use('/api/messages', createProxyMiddleware({
+    target: MESSAGE_SERVICE_URL,
+    changeOrigin: true,
+    logger: console
+}));
+
 // 2. THE OPTION A SPLIT (Auth Interception)
 // The gateway mounts at /api/users, so req.path becomes just '/login' or '/cart'
 // 2. THE OPTION A SPLIT (Auth Interception)
@@ -101,4 +110,5 @@ app.listen(PORT, () => {
     console.log(`🔐 Auth Traffic (Login/Register) -> ${AUTH_SERVICE_URL}`);
     console.log(`🛡️  Monolith Fallback -> ${MONOLITH_URL}`);
     console.log(`Catelog tapped ->${CATALOG_SERVICE_URL}`);
+    console.log(`📨 Message Traffic -> ${MESSAGE_SERVICE_URL}`); // 👇 ADD THIS
 });
