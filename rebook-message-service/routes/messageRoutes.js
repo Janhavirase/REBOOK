@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { sendMessage, getAllMessages, deleteMessage } = require('../controllers/messageController');
-const { protect, admin } = require('../middleware/authMiddleware'); // Importing our new header middleware
+const { protect, admin } = require('../middleware/authmiddleware'); // Importing our new header middleware
 
 // Public Route (Anyone can contact support)
 router.post('/', sendMessage);
