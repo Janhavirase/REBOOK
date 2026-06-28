@@ -4,7 +4,8 @@ const cron = require('node-cron');
 const Outbox = require('../models/Outbox');
 
 async function startRelay() {
-    const connection = await amqp.connect('amqp://localhost');
+// Correct: Uses the CloudAMQP URL first, and only falls back to localhost for local testing
+const connection = await amqp.connect(process.env.RABBITMQ_URL || 'amqp://localhost');
     const channel = await connection.createChannel();
     
     const QUEUE = 'user_events';
