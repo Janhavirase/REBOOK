@@ -14,7 +14,7 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 COPY package*.json ./
 
 # Install only production dependencies (skips devDependencies)
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 # Copy the rest of the application code
 COPY . .
