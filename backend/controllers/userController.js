@@ -196,11 +196,11 @@ const deleteUser = async (req, res) => {
 module.exports = { 
     registerUser, 
     loginUser, 
-    addToCart,      // <--- Added
-    getCart,        // <--- Added
+    addToCart,      
+    getCart,        
     removeFromCart,
     getUserProfile,
-    addReview, // <--- New Exports  // <--- Added
+    addReview, 
     getUsers, 
     deleteUser
 };
