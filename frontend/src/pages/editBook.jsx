@@ -7,7 +7,7 @@ const editBook = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rebook-unyc.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_URL ||'http://localhost:4000';
 
   // Form State
   const [formData, setFormData] = useState({

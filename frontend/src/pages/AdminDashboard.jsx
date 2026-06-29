@@ -10,7 +10,7 @@ import 'react-toastify/dist/ReactToastify.css'; // <--- CSS IMPORT
 // --- SENIOR DEV BEST PRACTICE: DYNAMIC ENVIRONMENT URL ---
 // If you have a .env file locally, it uses that. 
 // If it's deployed to Render/Vercel, it defaults to the production URL.
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rebook-unyc.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 const AdminDashboard = () => {
   const [messages, setMessages] = useState([]);

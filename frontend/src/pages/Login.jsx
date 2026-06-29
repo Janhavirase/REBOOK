@@ -8,7 +8,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rebook-unyc.onrender.com';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
   const handleLogin = async (e) => {
     e.preventDefault();

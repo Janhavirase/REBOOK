@@ -12,7 +12,7 @@ const Home = () => {
   const [nearbyBooks, setNearbyBooks] = useState([]);
   const [recentBooks, setRecentBooks] = useState([]); 
   const [searchResults, setSearchResults] = useState([]); 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rebook-unyc.onrender.com';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
   // --- Live Search States ---
   const [suggestions, setSuggestions] = useState([]); 

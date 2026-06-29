@@ -21,7 +21,7 @@ const SellBook = () => {
   const [lat, setLat] = useState('');
   const [lng, setLng] = useState('');
   const [locationStatus, setLocationStatus] = useState('');
-   const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rebook-unyc.onrender.com';
+   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 

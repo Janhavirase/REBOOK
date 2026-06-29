@@ -9,7 +9,7 @@ const ViewAllBooks = () => {
   const [searchParams] = useSearchParams();
   const type = searchParams.get('type'); // 'nearby' or 'recent'
   const category = searchParams.get('category'); // 'Education', etc.
-     const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rebook-unyc.onrender.com';
+     const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);

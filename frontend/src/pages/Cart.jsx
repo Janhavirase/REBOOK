@@ -6,7 +6,7 @@ import PageTransition from '../components/PageTransition'; // <--- Import
 const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rebook-unyc.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
   // 1. Fetch Cart Items
   useEffect(() => {

@@ -10,7 +10,7 @@ const SellerProfile = () => {
   const [reviews, setReviews] = useState([]);
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
-     const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rebook-unyc.onrender.com';
+     const API_BASE_URL = import.meta.env.VITE_API_URL ||'http://localhost:4000';
 
   // Review Form
   const [rating, setRating] = useState(5);
