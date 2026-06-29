@@ -88,12 +88,15 @@ app.use('/api/users', createProxyMiddleware({
 
 
 // 3C. Catalog Service Interception
+// 3C. Catalog Service Interception
 app.use('/api/books', createProxyMiddleware({
     target: CATALOG_SERVICE_URL,
     changeOrigin: true,
+    pathRewrite: {
+        '^/api/books': '', // This removes '/api/books' so the Catalog service receives '/'
+    },
     logger: console
 }));
-
 // 3D. Cart Service Interception
 app.use('/api/cart', createProxyMiddleware({
     target: CART_SERVICE_URL,
