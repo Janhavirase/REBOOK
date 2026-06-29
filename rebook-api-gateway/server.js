@@ -5,6 +5,10 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 const rateLimit = require('express-rate-limit'); // 🚨 NEW: Import the limiter
 const app = express();
 
+app.set('trust proxy', 1);
+
+
+
 app.use(cors({
     origin: [
         "http://localhost:5173",
