@@ -33,7 +33,6 @@ app.use('/api', globalLimiter);
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:4001'; // <--- ADD THIS LINE
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:4002';
-const MONOLITH_URL = process.env.MONOLITH_URL || 'http://localhost:5000';
 const CATALOG_SERVICE_URL = process.env.CATALOG_SERVICE_URL || 'http://localhost:4003';
 const CART_SERVICE_URL = process.env.CART_SERVICE_URL || 'http://localhost:4004';
 const MESSAGE_SERVICE_URL = process.env.MESSAGE_SERVICE_URL || 'http://localhost:4005';
@@ -97,18 +96,13 @@ app.use('/api/cart', createProxyMiddleware({
 }));
 
 // 3. CATCH-ALL (Monolith Fallback)
-app.use('/', createProxyMiddleware({
-    target: MONOLITH_URL,
-    changeOrigin: true,
-    logger: console
-}));
+
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
     console.log(`🚀 API Gateway running on port ${PORT}`);
     console.log(`🧠 AI Traffic -> ${AI_SERVICE_URL}`);
     console.log(`🔐 Auth Traffic (Login/Register) -> ${AUTH_SERVICE_URL}`);
-    console.log(`🛡️  Monolith Fallback -> ${MONOLITH_URL}`);
     console.log(`Catelog tapped ->${CATALOG_SERVICE_URL}`);
     console.log(`📨 Message Traffic -> ${MESSAGE_SERVICE_URL}`); // 👇 ADD THIS
 });
