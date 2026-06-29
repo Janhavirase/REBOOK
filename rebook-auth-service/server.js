@@ -165,11 +165,13 @@ const admin = (req, res, next) => {
 };
 
 // Add the missing Admin route
-app.get('/users', protect, admin, async (req, res) => {
+app.get(['/', '/api/users', '/users'], protect, admin, async (req, res) => {
     try {
-        const users = await User.find({});
+        // Safe query: We select('-password') to never accidentally send password hashes to the dashboard
+        const users = await User.find({}).select('-password');
         res.json(users);
     } catch (error) {
+        console.error("Error fetching users:", error);
         res.status(500).json({ message: 'Server Error fetching users' });
     }
 });
@@ -206,28 +208,30 @@ app.post('/:id/reviews', protect, async (req, res) => {
   }
 });
 
-app.delete('/:id', protect, admin, async (req, res) => {    const session = await mongoose.startSession();
+app.delete(['/:id', '/api/users/:id'], protect, admin, async (req, res) => { 
+    const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
         const userId = req.params.id;
 
-        // 2. Delete the user (Pass the session)
+        // Delete the user (Pass the session)
         await User.findByIdAndDelete(userId).session(session);
 
-        // 3. Write to the Outbox (Pass the session)
+        // Write to the Outbox (Pass the session)
         await Outbox.create([{
             eventType: 'USER_DELETED',
             payload: { userId: userId, deletedAt: new Date() }
         }], { session });
 
-        // 4. Commit BOTH actions together safely
+        // Commit BOTH actions together safely
         await session.commitTransaction();
         res.json({ message: 'User safely removed and event staged.' });
 
     } catch (error) {
         // If anything fails, undo everything
         await session.abortTransaction();
+        console.error("Transaction failed:", error);
         res.status(500).json({ message: 'Transaction failed, rolled back.' });
     } finally {
         session.endSession();
