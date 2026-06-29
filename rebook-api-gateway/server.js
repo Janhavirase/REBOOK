@@ -10,7 +10,9 @@ app.use(cors({
         "http://localhost:5173",
 "https://rebook-gamma.vercel.app"
     ],
-    credentials: true
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"]
 }));
 app.get('/health', (req, res) => {
     res.status(200).json({
