@@ -8,7 +8,7 @@ const app = express();
 app.use(cors({
     origin: [
         "http://localhost:5173",
-        "https://rebook-xi.vercel.app" 
+      "rebook-gamma.vercel.app"
     ],
     credentials: true
 }));
