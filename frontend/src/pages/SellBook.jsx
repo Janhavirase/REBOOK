@@ -32,19 +32,41 @@ const SellBook = () => {
   };
 
   // --- LOCATION LOGIC ---
+ // --- LOCATION LOGIC ---
   const getLocation = () => {
     setLocationStatus('Locating...');
-    const toastId = toast.loading('Triangulating position...');
+    const toastId = toast.loading('Triangulating position & finding city...');
 
     const options = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLat(position.coords.latitude);
-          setLng(position.coords.longitude);
-          setLocationStatus('GPS Locked');
-          toast.success('Location Locked! 📍', { id: toastId });
+        async (position) => {
+          const currentLat = position.coords.latitude;
+          const currentLng = position.coords.longitude;
+          
+          setLat(currentLat);
+          setLng(currentLng);
+
+          try {
+            // 🚨 NEW: Reverse Geocoding using free OpenStreetMap API
+            const response = await axios.get(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentLat}&lon=${currentLng}`);
+            const address = response.data.address;
+
+            // Extract the best matching area name (falls back gracefully)
+            const detectedCity = address.city || address.town || address.village || address.state_district || address.county || "Unknown Location";
+
+            // Auto-fill the formData state with the detected city
+            setFormData(prev => ({ ...prev, city: detectedCity }));
+
+            setLocationStatus('GPS Locked');
+            toast.success(`Location Locked: ${detectedCity} 📍`, { id: toastId });
+            
+          } catch (geoError) {
+            console.error("Geocoding failed", geoError);
+            setLocationStatus('GPS Locked');
+            toast.success('Coordinates found, but please enter city manually.', { id: toastId });
+          }
         },
         (error) => {
           console.error(error);
@@ -305,14 +327,15 @@ const SellBook = () => {
              <div className="bg-gray-50 p-4 border border-gray-200 rounded-md flex flex-col sm:flex-row gap-4 items-end">
                   <div className="flex-1 w-full">
                        <label className="block text-sm font-semibold text-gray-700 mb-1">City / Area <span className="text-red-500">*</span></label>
-                       <input 
-                         type="text" 
-                         name="city" 
-                         placeholder="Enter City Name (e.g. Mumbai)" 
-                         onChange={handleChange} 
-                         required 
-                         className="w-full p-2.5 bg-white border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm outline-none text-sm text-gray-900" 
-                       />
+                      <input 
+  type="text" 
+  name="city" 
+  value={formData.city} // 🚨 THIS IS REQUIRED FOR AUTO-FILL TO SHOW UP
+  placeholder="Enter City Name (e.g. Mumbai)" 
+  onChange={handleChange} 
+  required 
+  className="w-full p-2.5 bg-white border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm outline-none text-sm text-gray-900" 
+/>
                   </div>
                   
                   <button 
