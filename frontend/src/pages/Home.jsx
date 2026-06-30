@@ -48,13 +48,20 @@ const Home = () => {
         setLoading(false); 
         setNearbyLoading(true); 
 
-        if (navigator.geolocation) {
+  if (navigator.geolocation) {
            navigator.geolocation.getCurrentPosition(
              async (position) => {
                const { latitude, longitude } = position.coords;
+               
+               // 🚨 THE FIX: Stabilize coordinates for the Redis Cache
+               // Rounding to 3 decimals groups requests within a ~100m radius
+               const safeLat = latitude.toFixed(3);
+               const safeLng = longitude.toFixed(3);
+               
                setLocationStatus('Nearby');
                try {
-                 const nearbyRes = await axios.get(`${apiUrl}?lat=${latitude}&lng=${longitude}`);
+                 // Send the rounded, stable coordinates to the Gateway
+                 const nearbyRes = await axios.get(`${apiUrl}?lat=${safeLat}&lng=${safeLng}`);
                  setNearbyBooks(nearbyRes.data);
                } catch (err) {
                  console.error("GPS Error", err);
