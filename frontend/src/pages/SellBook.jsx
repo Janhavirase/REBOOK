@@ -48,19 +48,25 @@ const SellBook = () => {
           setLat(currentLat);
           setLng(currentLng);
 
-          try {
-            // 🚨 NEW: Reverse Geocoding using free OpenStreetMap API
-            const response = await axios.get(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentLat}&lon=${currentLng}`);
-            const address = response.data.address;
+      try {
+            // 🚨 FIX: Use native fetch() instead of Axios to avoid credential conflicts
+            // Added '&accept-language=en' so it always returns the city in English
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentLat}&lon=${currentLng}&accept-language=en`);
+            const data = await response.json();
 
-            // Extract the best matching area name (falls back gracefully)
-            const detectedCity = address.city || address.town || address.village || address.state_district || address.county || "Unknown Location";
+            if (data && data.address) {
+                const address = data.address;
+                // Extract the best matching area name
+                const detectedCity = address.city || address.town || address.village || address.state_district || address.county || "Unknown Location";
 
-            // Auto-fill the formData state with the detected city
-            setFormData(prev => ({ ...prev, city: detectedCity }));
+                // Auto-fill the formData state with the detected city
+                setFormData(prev => ({ ...prev, city: detectedCity }));
 
-            setLocationStatus('GPS Locked');
-            toast.success(`Location Locked: ${detectedCity} 📍`, { id: toastId });
+                setLocationStatus('GPS Locked');
+                toast.success(`Location Locked: ${detectedCity} 📍`, { id: toastId });
+            } else {
+                throw new Error("No address found at these coordinates");
+            }
             
           } catch (geoError) {
             console.error("Geocoding failed", geoError);
