@@ -163,6 +163,19 @@ const createBook = async (req, res) => {
     });
 
     const createdBook = await book.save();
+
+    // 🧹 AUTOMATED CACHE INVALIDATION ON CREATION
+    try {
+      const keys = await redisClient.keys('*');
+      const bookKeys = keys.filter(key => key.includes('books'));
+      if (bookKeys.length > 0) {
+        await redisClient.del(bookKeys);
+        console.log(`🧹 Cache Cleared: Deleted ${bookKeys.length} stale Redis keys on creation.`);
+      }
+    } catch (redisErr) {
+      console.error("💥 Redis cache invalidation failed:", redisErr);
+    }
+
     res.status(201).json(createdBook);
 
   } catch (error) {
@@ -198,6 +211,19 @@ const updateBook = async (req, res) => {
     }
 
     const updatedBook = await book.save();
+
+    // 🧹 AUTOMATED CACHE INVALIDATION ON UPDATE
+    try {
+      const keys = await redisClient.keys('*');
+      const bookKeys = keys.filter(key => key.includes('books'));
+      if (bookKeys.length > 0) {
+        await redisClient.del(bookKeys);
+        console.log(`🧹 Cache Cleared: Deleted ${bookKeys.length} stale Redis keys on update.`);
+      }
+    } catch (redisErr) {
+      console.error("💥 Redis cache invalidation failed:", redisErr);
+    }
+
     res.json(updatedBook);
 
   } catch (error) {
@@ -224,6 +250,19 @@ const deleteBook = async (req, res) => {
     }
 
     await book.deleteOne();
+
+    // 🧹 AUTOMATED CACHE INVALIDATION ON DELETION
+    try {
+      const keys = await redisClient.keys('*');
+      const bookKeys = keys.filter(key => key.includes('books'));
+      if (bookKeys.length > 0) {
+        await redisClient.del(bookKeys);
+        console.log(`🧹 Cache Cleared: Deleted ${bookKeys.length} stale Redis keys on deletion.`);
+      }
+    } catch (redisErr) {
+      console.error("💥 Redis cache invalidation failed:", redisErr);
+    }
+
     res.json({ message: 'Book removed successfully' });
 
   } catch (error) {
