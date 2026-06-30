@@ -1,6 +1,7 @@
 const Book = require('../models/Book');
 const cloudinary = require('../config/cloudinary'); 
 const redisClient = require('../config/redis');
+
 // @desc    Get all books (Sorted by Distance if Location provided, else by Date)
 // @route   GET /api/books?lat=12.34&lng=56.78
 const getBooks = async (req, res) => {
@@ -37,7 +38,6 @@ const getBooks = async (req, res) => {
     }
 
     // --- OPTION 2: NORMAL FETCH (Recent First) ---
- // --- OPTION 2: NORMAL FETCH (Recent First) ---
     // We introduce pagination: Default to page 1, fetch 10 books at a time
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10; 
@@ -147,6 +147,19 @@ const createBook = async (req, res) => {
     });
 
     const createdBook = await book.save();
+
+    // 🧹 AUTOMATED CACHE INVALIDATION ON CREATION
+    try {
+      const keys = await redisClient.keys('*');
+      const bookKeys = keys.filter(key => key.includes('books'));
+      if (bookKeys.length > 0) {
+        await redisClient.del(bookKeys);
+        console.log(`🧹 Cache Cleared: Deleted ${bookKeys.length} stale Redis keys on creation.`);
+      }
+    } catch (redisErr) {
+      console.error("💥 Redis cache invalidation failed:", redisErr);
+    }
+
     res.status(201).json(createdBook);
 
   } catch (error) {
@@ -182,6 +195,19 @@ const updateBook = async (req, res) => {
     }
 
     const updatedBook = await book.save();
+
+    // 🧹 AUTOMATED CACHE INVALIDATION ON UPDATE
+    try {
+      const keys = await redisClient.keys('*');
+      const bookKeys = keys.filter(key => key.includes('books'));
+      if (bookKeys.length > 0) {
+        await redisClient.del(bookKeys);
+        console.log(`🧹 Cache Cleared: Deleted ${bookKeys.length} stale Redis keys on update.`);
+      }
+    } catch (redisErr) {
+      console.error("💥 Redis cache invalidation failed:", redisErr);
+    }
+
     res.json(updatedBook);
 
   } catch (error) {
@@ -208,6 +234,19 @@ const deleteBook = async (req, res) => {
     }
 
     await book.deleteOne();
+
+    // 🧹 AUTOMATED CACHE INVALIDATION ON DELETION
+    try {
+      const keys = await redisClient.keys('*');
+      const bookKeys = keys.filter(key => key.includes('books'));
+      if (bookKeys.length > 0) {
+        await redisClient.del(bookKeys);
+        console.log(`🧹 Cache Cleared: Deleted ${bookKeys.length} stale Redis keys on deletion.`);
+      }
+    } catch (redisErr) {
+      console.error("💥 Redis cache invalidation failed:", redisErr);
+    }
+
     res.json({ message: 'Book removed successfully' });
 
   } catch (error) {
@@ -224,5 +263,5 @@ module.exports = {
   deleteBook, 
   updateBook, 
   getBookById,
-  getSimilarBooks // <--- Added this to exports
+  getSimilarBooks 
 };
