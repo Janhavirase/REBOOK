@@ -1,6 +1,7 @@
  import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+// import axios from 'axios';
+import api from '../api/axios'; // Import our new custom interceptor
 import { FaEnvelope, FaLock, FaSignInAlt } from 'react-icons/fa';
 import toast from 'react-hot-toast'; // <--- 1. Import Toast
 import PageTransition from '../components/PageTransition'; // <--- Import
@@ -8,7 +9,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+  //const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -18,8 +19,8 @@ const Login = () => {
     const toastId = toast.loading('Verifying credentials...');
 
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/users/login`, { email, password });
-      
+//       const res = await axios.post(`${API_BASE_URL}/api/users/login`, { email, password });
+      const res = await api.post('/api/users/login', { email, password });
       localStorage.setItem('userInfo', JSON.stringify(res.data));
       
       // 3. Success Toast (Updates the loading toast)

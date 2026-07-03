@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../api/axios';
 import { useSearchParams, Link } from 'react-router-dom';
 import BookCard from '../components/BookCard';
 import BookCardSkeleton from '../components/BookCardSkeleton'; // Use skeleton here too
@@ -9,7 +9,7 @@ const ViewAllBooks = () => {
   const [searchParams] = useSearchParams();
   const type = searchParams.get('type'); // 'nearby' or 'recent'
   const category = searchParams.get('category'); // 'Education', etc.
-     const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+    //  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,7 +17,7 @@ const ViewAllBooks = () => {
 
   useEffect(() => {
     const fetchBooks = async () => {
-      let url = `${API_BASE_URL}/api/books`;
+      let url = '/api/books';
       setLoading(true);
 
       // 1. Handle "Nearby" - Needs GPS
@@ -26,7 +26,7 @@ const ViewAllBooks = () => {
          if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const { latitude, longitude } = pos.coords;
-                const { data } = await axios.get(`${url}?lat=${latitude}&lng=${longitude}`);
+                const { data } = await api.get(`${url}?lat=${latitude}&lng=${longitude}`);
                 setBooks(data);
                 setLoading(false);
             });
@@ -42,8 +42,9 @@ const ViewAllBooks = () => {
       }
 
       try {
-        const { data } = await axios.get(url);
-        
+        // const { data } = await axios.get(url);
+        const { data } = await api.get(url);
+
         let filtered = data;
         // Client-side filtering for category
         if (category) {

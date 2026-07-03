@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../api/axios'; // Import our new custom interceptor
+
 import { FaPaperPlane } from 'react-icons/fa';
 import PageTransition from '../components/PageTransition'; // <--- Import
 const Contact = () => {
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
   const [status, setStatus] = useState('');
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+// const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_BASE_URL}/api/messages`, formData);
+      // await axios.post(`${API_BASE_URL}/api/messages`, formData);
+        await api.post('/api/messages', formData);
+
       setStatus('✅ Message sent! We will contact you soon.');
       setFormData({ name: '', email: '', subject: '', message: '' }); // Clear form
     } catch (error) {

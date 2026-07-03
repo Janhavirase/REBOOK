@@ -4,13 +4,22 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const { requestLogger, logger } = require('./config/logger'); // 🚨 Import Logger
 
 // Import your existing Redis connection
 require('./config/redis'); 
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+app.use(requestLogger);
+app.use(cors({
+    origin: [
+        "http://localhost:5173",
+        "https://rebook-gamma.vercel.app" // Keep this ready for deployment!
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));app.use(express.json());
 
 // Connect to Database
 mongoose.connect(process.env.MONGO_URI)
@@ -34,4 +43,5 @@ listenForEvents();
 const PORT = process.env.PORT || 4003;
 app.listen(PORT, () => {
     console.log(`📚 ReBook Catalog Microservice running smoothly on Port ${PORT}`);
+    logger.info(`📦 Catalog Service running on ${PORT}`);
 });

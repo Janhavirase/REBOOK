@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FaRobot, FaPaperPlane, FaTimes } from 'react-icons/fa';
-import axios from 'axios';
+// import axios from 'axios';
+import api from '../api/axios'; // Import our new custom interceptor
 
 const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,7 +10,7 @@ const ChatBot = () => {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+// const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -21,7 +22,9 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
     setLoading(true);
 
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/ai/chat`, { message: input });
+      // const res = await axios.post(`${API_BASE_URL}/api/ai/chat`, { message: input });
+      const res=await api.post('/api/ai/chat',{message:input});
+    
       setMessages(prev => [...prev, { text: res.data.reply, sender: "bot" }]);
     } catch (err) {
       setMessages(prev => [...prev, { text: "My brain is offline 😴", sender: "bot" }]);

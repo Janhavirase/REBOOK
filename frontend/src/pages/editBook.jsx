@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/axios'; // Import our new custom interceptor
 import { useNavigate, useParams } from 'react-router-dom';
 import PageTransition from '../components/PageTransition'; // <--- Import
 const editBook = () => {
@@ -7,7 +7,7 @@ const editBook = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-const API_BASE_URL = import.meta.env.VITE_API_URL ||'http://localhost:4000';
+// const API_BASE_URL = import.meta.env.VITE_API_URL ||'http://localhost:4000';
 
   // Form State
   const [formData, setFormData] = useState({
@@ -27,7 +27,9 @@ const API_BASE_URL = import.meta.env.VITE_API_URL ||'http://localhost:4000';
   useEffect(() => {
     const fetchBook = async () => {
       try {
-        const { data } = await axios.get(`${API_BASE_URL}/api/books`);
+        // const { data } = await axios.get(`${API_BASE_URL}/api/books`);
+        const { data } = await api.get('/api/books');
+
         // Note: Ideally you should have a 'getSingleBook' API, but filtering locally works for now
         const book = data.find((b) => b._id === id);
         
@@ -76,7 +78,9 @@ const API_BASE_URL = import.meta.env.VITE_API_URL ||'http://localhost:4000';
     }
 
     try {
-      await axios.put(`${API_BASE_URL}/api/books/${id}`, data, {
+      // await axios.put(`${API_BASE_URL}/api/books/${id}`, data, {
+       await api.put(`/api/books/${id}`, data, {
+
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`

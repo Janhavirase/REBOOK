@@ -4,16 +4,55 @@ const cors = require('cors');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const amqp = require('amqplib');
+const CircuitBreaker = require('opossum'); // 🚨 NEW: Import Opossum
+const { requestLogger, logger } = require('./config/logger'); // 🚨 Import Logger
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+app.use(requestLogger);
+app.use(cors({
+    origin: [
+        "http://localhost:5173",
+        "https://rebook-gamma.vercel.app" // Keep for production!
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));app.use(express.json());
 
 // Initialize Razorpay
 const razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID,
     key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
+
+// 🚨 NEW: Configure Circuit Breaker Options for Financial Transactions
+const paymentBreakerOptions = {
+    timeout: 5000,                // Timeout after 5 seconds if Razorpay hangs
+    errorThresholdPercentage: 40,  // Trip breaker if 40% of recent transactions fail
+    resetTimeout: 15000           // Stay open for 15 seconds before cooldown check
+};
+
+// 🚨 NEW: Wrap the outgoing Razorpay API call in a function
+const executeRazorpayOrderCreation = async (options) => {
+    return await razorpay.orders.create(options);
+};
+
+// 🚨 NEW: Instantiate the Circuit Breaker
+const paymentBreaker = new CircuitBreaker(executeRazorpayOrderCreation, paymentBreakerOptions);
+
+// 🚨 NEW: Define the Fallback Strategy when the breaker trips (OPEN)
+paymentBreaker.fallback((err) => {
+    console.error("🚨 Payment Circuit Breaker is OPEN! Falling back safely.");
+    return {
+        isFallback: true,
+        message: "Our secure payment partner is experiencing heavy load. No funds were deducted. Please retry shortly."
+    };
+});
+
+// Operational Telemetry Logs for debugging system stability
+paymentBreaker.on('open', () => console.warn('⚠️ PAYMENT BREAKER TRIPPED: State is now OPEN.'));
+paymentBreaker.on('close', () => console.log('✅ PAYMENT BREAKER RESTORED: State is now CLOSED.'));
+paymentBreaker.on('halfOpen', () => console.log('🟡 PAYMENT BREAKER TESTING: State is HALF-OPEN.'));
 
 // RabbitMQ Publisher Helper
 async function publishToQueue(queueName, data) {
@@ -40,7 +79,17 @@ app.post('/create-order', async (req, res) => {
             notes: { bookId, buyerId } // Store IDs here so the webhook can read them later
         };
 
-        const order = await razorpay.orders.create(options);
+        // 🚨 UPDATED: Execute the external call through the circuit breaker fire mechanism
+        const order = await paymentBreaker.fire(options);
+
+        // Check if the circuit breaker tripped and executed the fallback object
+        if (order && order.isFallback) {
+            return res.status(503).json({ 
+                message: order.message,
+                code: "PAYMENT_GATEWAY_TIMEOUT"
+            });
+        }
+
         res.json(order);
     } catch (error) {
         console.error("Razorpay Order Error:", error);
@@ -85,4 +134,6 @@ app.post('/webhook', (req, res) => {
 
 app.listen(process.env.PORT || 4006, () => {
     console.log(`💳 Payment Microservice running on Port ${process.env.PORT || 4006}`);
+    logger.info(`📦 Rebook payment Service running on ${process.env.PORT||4006}`);
+    
 });

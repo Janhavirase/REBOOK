@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { FaMapMarkerAlt, FaUser, FaWhatsapp, FaArrowLeft, FaPhone } from 'react-icons/fa';
+import api from '../api/axios'; // Import our new custom interceptor
+
+import { FaMapMarkerAlt, FaUser, FaArrowLeft, FaPhone, FaWhatsapp } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import BookCard from '../components/BookCard'; 
 import PageTransition from '../components/PageTransition'; 
@@ -15,15 +16,14 @@ const BookDetails = () => {
   const [sellerData, setSellerData] = useState(null); 
   const [similarBooks, setSimilarBooks] = useState([]); 
   const [loading, setLoading] = useState(true);
-  //const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-const API_BASE_URL = 'https://rebook-api-gateway.onrender.com';
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         
-        // A. Get Main Book Details (From Catalog Service)
-        const { data: mainBook } = await axios.get(`${API_BASE_URL}/api/books/${id}`);
+        // A. Get Main Book Details (From Catalog Service) - 🚨 UPDATED to use centralized api instance
+        const { data: mainBook } = await api.get(`/api/books/${id}`);
         setBook(mainBook);
 
         // B. THE MICROSERVICE JOIN: Fetch the Seller Details from the Auth Service
@@ -32,7 +32,7 @@ const API_BASE_URL = 'https://rebook-api-gateway.onrender.com';
         
         if (sellerId) {
             try {
-                const { data: sellerInfo } = await axios.get(`${API_BASE_URL}/api/users/profile/${sellerId}`);
+                const { data: sellerInfo } = await api.get(`/api/users/profile/${sellerId}`);
                 setSellerData(sellerInfo);
             } catch (err) {
                 console.error("Error fetching seller details", err);
@@ -42,9 +42,7 @@ const API_BASE_URL = 'https://rebook-api-gateway.onrender.com';
         // C. Get Similar Books 
         if (mainBook.category) {
             try {
-                const { data: related } = await axios.get(
-                    `${API_BASE_URL}/api/books/similar/${id}/${mainBook.category}`
-                );
+                const { data: related } = await api.get(`/api/books/similar/${id}/${mainBook.category}`);
                 setSimilarBooks(related);
             } catch (err) {
                 console.error("Error fetching similar books", err);
@@ -79,20 +77,15 @@ const API_BASE_URL = 'https://rebook-api-gateway.onrender.com';
     }
   };
 
-  if (loading) return <div className="text-center mt-20 text-xl font-semibold">Loading details...</div>;
-  if (!book) return <div className="text-center mt-20 text-red-500 font-bold">Book not found!</div>;
-
-  // We determine the ID just in case we need it for links
-  const sellerId = book.seller._id || book.seller;
-const handleRazorpayBuy = async () => {
+  const handleRazorpayBuy = async () => {
     const userInfo = JSON.parse(localStorage.getItem('userInfo'));
     if (!userInfo) return toast.error("Please login to buy books.");
 
     const toastId = toast.loading("Connecting to Razorpay...");
 
     try {
-        // 1. Tell backend to create an order
-        const { data: order } = await axios.post(`${API_BASE_URL}/api/payment/create-order`, {
+        // 1. Tell backend to create an order - 🚨 UPDATED to use centralized api instance
+        const { data: order } = await api.post('/api/payment/create-order', {
             amount: book.price,
             bookId: book._id,
             buyerId: userInfo._id
@@ -102,7 +95,7 @@ const handleRazorpayBuy = async () => {
 
         // 2. Open Razorpay Checkout Modal
         const options = {
-            key:import.meta.env.VITE_RAZORPAY_KEY_ID, // Add your test key here
+            key: import.meta.env.VITE_RAZORPAY_KEY_ID, 
             amount: order.amount,
             currency: order.currency,
             name: "ReBook Marketplace",
@@ -126,9 +119,20 @@ const handleRazorpayBuy = async () => {
 
     } catch (error) {
         console.error(error);
-        toast.error("Could not initiate payment.", { id: toastId });
+        
+        // 🚨 UPDATED: Capture the clean circuit breaker fallback error message directly from backend
+        const errorMessage = error.response?.data?.message || "Could not initiate payment.";
+        
+        // Use the dynamic errorMessage instead of the hardcoded one, keeping your toastId
+        toast.error(errorMessage, { id: toastId, duration: 5000 });
     }
   };
+
+  if (loading) return <div className="text-center mt-20 text-xl font-semibold">Loading details...</div>;
+  if (!book) return <div className="text-center mt-20 text-red-500 font-bold">Book not found!</div>;
+
+  const sellerId = book.seller._id || book.seller;
+
   return (
     <PageTransition>
     <div className="container mx-auto p-4 md:p-8 max-w-6xl">
@@ -165,7 +169,7 @@ const handleRazorpayBuy = async () => {
             <span className={`px-3 py-1 rounded-full text-sm font-bold border ${
                book.condition === 'New' ? 'bg-green-100 text-green-800 border-green-200' : 'bg-yellow-100 text-yellow-800 border-yellow-200'
             }`}>
-                ✨ {book.condition}
+               ✨ {book.condition}
             </span>
             <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-bold flex items-center">
               <FaMapMarkerAlt className="mr-1 text-red-500" /> {book.city}
@@ -187,7 +191,6 @@ const handleRazorpayBuy = async () => {
              </h3>
              <div className="flex items-center justify-between">
                 <div>
-                   {/* 🚨 UPDATED: Display fetched sellerData name and ID */}
                    <p className="text-lg font-bold capitalize text-gray-900">
                      <Link 
                        to={`/profile/${sellerId}`} 
@@ -203,7 +206,6 @@ const handleRazorpayBuy = async () => {
                 </div>
                 
                 <div className="text-right">
-                   {/* 🚨 UPDATED: Display fetched sellerData phone */}
                    {sellerData?.phone ? (
                       <p className="text-gray-800 font-mono font-bold flex items-center gap-2">
                         <FaPhone className="text-green-600"/> {sellerData.phone}
@@ -223,11 +225,11 @@ const handleRazorpayBuy = async () => {
               <FaWhatsapp size={20} /> Chat / Buy Now
             </button>
             <button 
-      onClick={handleRazorpayBuy}
-      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition flex justify-center items-center gap-2 shadow-lg"
-  >
-      💳 Buy Securely
-  </button>
+              onClick={handleRazorpayBuy}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition flex justify-center items-center gap-2 shadow-lg"
+            >
+              \uD83D\uDCB3 Buy Securely
+            </button>
           </div>
         </div>
       </div>

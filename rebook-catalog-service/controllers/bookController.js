@@ -10,7 +10,8 @@ const getBooks = async (req, res) => {
 
     // --- OPTION 1: LOCATION-BASED SORTING ---
     if (lat && lng) {
-      console.log(`📍 Searching for books near: ${lat}, ${lng}`);
+      // 🚨 UPDATED: Structured Info Log
+      req.log.info({ lat, lng }, `📍 Searching for books near: ${lat}, ${lng}`);
 
       const books = await Book.aggregate([
         {
@@ -59,7 +60,8 @@ const getBooks = async (req, res) => {
     }
     res.json(books);
   } catch (error) {
-    console.error("Error in getBooks:", error);
+    // 🚨 UPDATED: Structured Error Log
+    req.log.error({ err: error }, "Error in getBooks");
     res.status(500).json({ message: 'Server Error fetching books' });
   }
 };
@@ -75,10 +77,12 @@ const getBookById = async (req, res) => {
     }
     res.json(book);
   } catch (error) {
-    console.error(error);
+    // 🚨 UPDATED: Structured Error Log
+    req.log.error({ err: error }, "Error fetching book details");
     res.status(500).json({ message: 'Server Error fetching book details' });
   }
 };
+
 // @desc    Get all books by a specific seller
 // @route   GET /seller/:id
 const getBooksBySeller = async (req, res) => {
@@ -86,7 +90,8 @@ const getBooksBySeller = async (req, res) => {
     const books = await Book.find({ seller: req.params.id }).sort({ createdAt: -1 });
     res.json(books);
   } catch (error) {
-    console.error("Error fetching seller books:", error);
+    // 🚨 UPDATED: Structured Error Log
+    req.log.error({ err: error }, "Error fetching seller book");
     res.status(500).json({ message: 'Server Error fetching seller books' });
   }
 };
@@ -106,7 +111,8 @@ const getSimilarBooks = async (req, res) => {
 
     res.json(books);
   } catch (error) {
-    console.error(error);
+    // 🚨 UPDATED: Structured Error Log
+    req.log.error({ err: error }, "Error fetching similar books");
     res.status(500).json({ message: 'Server Error fetching similar books' });
   }
 };
@@ -118,7 +124,8 @@ const getMyBooks = async (req, res) => {
     const books = await Book.find({ seller: req.user._id }).sort({ createdAt: -1 });
     res.json(books);
   } catch (error) {
-    console.error(error);
+    // 🚨 UPDATED: Structured Error Log
+    req.log.error({ err: error }, "Error fetching my books");
     res.status(500).json({ message: 'Server Error fetching my books' });
   }
 };
@@ -170,16 +177,19 @@ const createBook = async (req, res) => {
       const bookKeys = keys.filter(key => key.includes('books'));
       if (bookKeys.length > 0) {
         await redisClient.del(bookKeys);
-        console.log(`🧹 Cache Cleared: Deleted ${bookKeys.length} stale Redis keys on creation.`);
+        // 🚨 UPDATED: Structured Info Log
+        req.log.info({ deletedCount: bookKeys.length }, `🧹 Cache Cleared: Deleted ${bookKeys.length} stale Redis keys on creation.`);
       }
     } catch (redisErr) {
-      console.error("💥 Redis cache invalidation failed:", redisErr);
+      // 🚨 UPDATED: Structured Error Log
+      req.log.error({ err: redisErr }, "💥 Redis cache invalidation failed");
     }
 
     res.status(201).json(createdBook);
 
   } catch (error) {
-    console.log("❌ ERROR IN CREATE BOOK:", error);
+    // 🚨 UPDATED: Structured Error Log
+    req.log.error({ err: error }, "❌ ERROR IN CREATE BOOK");
     res.status(500).json({ message: error.message || "Server Error" });
   }
 };
@@ -218,16 +228,19 @@ const updateBook = async (req, res) => {
       const bookKeys = keys.filter(key => key.includes('books'));
       if (bookKeys.length > 0) {
         await redisClient.del(bookKeys);
-        console.log(`🧹 Cache Cleared: Deleted ${bookKeys.length} stale Redis keys on update.`);
+        // 🚨 UPDATED: Structured Info Log
+        req.log.info({ deletedCount: bookKeys.length }, `🧹 Cache Cleared: Deleted ${bookKeys.length} stale Redis keys on update.`);
       }
     } catch (redisErr) {
-      console.error("💥 Redis cache invalidation failed:", redisErr);
+      // 🚨 UPDATED: Structured Error Log
+      req.log.error({ err: redisErr }, "💥 Redis cache invalidation failed");
     }
 
     res.json(updatedBook);
 
   } catch (error) {
-    console.error(error);
+    // 🚨 UPDATED: Structured Error Log
+    req.log.error({ err: error }, "Server Error updating book");
     res.status(500).json({ message: 'Server Error updating book' });
   }
 };
@@ -257,16 +270,19 @@ const deleteBook = async (req, res) => {
       const bookKeys = keys.filter(key => key.includes('books'));
       if (bookKeys.length > 0) {
         await redisClient.del(bookKeys);
-        console.log(`🧹 Cache Cleared: Deleted ${bookKeys.length} stale Redis keys on deletion.`);
+        // 🚨 UPDATED: Structured Info Log
+        req.log.info({ deletedCount: bookKeys.length }, `🧹 Cache Cleared: Deleted ${bookKeys.length} stale Redis keys on deletion.`);
       }
     } catch (redisErr) {
-      console.error("💥 Redis cache invalidation failed:", redisErr);
+      // 🚨 UPDATED: Structured Error Log
+      req.log.error({ err: redisErr }, "💥 Redis cache invalidation failed");
     }
 
     res.json({ message: 'Book removed successfully' });
 
   } catch (error) {
-    console.error(error);
+    // 🚨 UPDATED: Structured Error Log
+    req.log.error({ err: error }, "Server Error deleting book");
     res.status(500).json({ message: 'Server Error deleting book' });
   }
 };

@@ -3,8 +3,11 @@ const express = require('express');
 const cors = require('cors');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const rateLimit = require('express-rate-limit'); // 🚨 NEW: Import the limiter
+const { requestLogger } = require('./config/logger'); // 🚨 Import Logger
+const client = require('prom-client'); // 🚨 NEW: Import Prometheus Client
 const app = express();
 
+app.use(requestLogger);
 app.set('trust proxy', 1);
 
 
@@ -18,6 +21,40 @@ app.use(cors({
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
+
+const collectDefaultMetrics = client.collectDefaultMetrics;
+collectDefaultMetrics({ register: client.register });
+
+// 2. Create a custom metric: HTTP Request Duration (Latency)
+const httpRequestDurationMicroseconds = new client.Histogram({
+    name: 'http_request_duration_seconds',
+    help: 'Duration of HTTP requests in seconds',
+    labelNames: ['method', 'route', 'status_code'],
+    buckets: [0.1, 0.3, 0.5, 0.7, 1, 3, 5, 10] // Measurement buckets
+});
+
+// 3. Create a custom metric: Total HTTP Requests (Throughput)
+const httpRequestsTotal = new client.Counter({
+    name: 'http_requests_total',
+    help: 'Total number of HTTP requests',
+    labelNames: ['method', 'route', 'status_code']
+});
+
+// 4. Middleware to intercept and measure every request
+app.use((req, res, next) => {
+    // Start the timer
+    const end = httpRequestDurationMicroseconds.startTimer();
+    
+    // When the request finishes, record the stats
+    res.on('finish', () => {
+        const labels = { route: req.path, status_code: res.statusCode, method: req.method };
+        httpRequestsTotal.inc(labels); // Increment total request counter
+        end(labels);                   // Record the time it took
+    });
+    next();
+});
+
+
 app.get('/health', (req, res) => {
     res.status(200).json({
         status: 'UP',
@@ -25,7 +62,10 @@ app.get('/health', (req, res) => {
         timestamp: new Date().toISOString()
     });
 });
-
+app.get('/metrics', async (req, res) => {
+    res.set('Content-Type', client.register.contentType);
+    res.end(await client.register.metrics());
+});
 const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // Limit each IP to 100 requests per window
@@ -43,25 +83,44 @@ const CATALOG_SERVICE_URL = process.env.CATALOG_SERVICE_URL || 'http://localhost
 const CART_SERVICE_URL = process.env.CART_SERVICE_URL || 'http://localhost:4004';
 const MESSAGE_SERVICE_URL = process.env.MESSAGE_SERVICE_URL || 'http://localhost:4005';
 const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL || 'http://localhost:4006';
+
 // 1. AI SERVICE ROUTE
 app.use('/api/ai', createProxyMiddleware({
     target: AI_SERVICE_URL,
     changeOrigin: true,
-    logger: console
+    logger: console,
+    // 🚨 SENIOR MOVE: Inject the correlation ID into the outgoing headers for Distributed Tracing
+    onProxyReq: (proxyReq, req, res) => {
+        if (req.id) {
+            proxyReq.setHeader('x-correlation-id', req.id);
+        }
+    }
 }));
 
 
 app.use('/api/payment', createProxyMiddleware({
     target: PAYMENT_SERVICE_URL,
     changeOrigin: true,
-    logger: console
+    logger: console,
+    // 🚨 SENIOR MOVE: Inject the correlation ID
+    onProxyReq: (proxyReq, req, res) => {
+        if (req.id) {
+            proxyReq.setHeader('x-correlation-id', req.id);
+        }
+    }
 }));
 
 // 3E. Message Service Interception
 app.use('/api/messages', createProxyMiddleware({
     target: MESSAGE_SERVICE_URL,
     changeOrigin: true,
-    logger: console
+    logger: console,
+    // 🚨 SENIOR MOVE: Inject the correlation ID
+    onProxyReq: (proxyReq, req, res) => {
+        if (req.id) {
+            proxyReq.setHeader('x-correlation-id', req.id);
+        }
+    }
 }));
 
 // 2. THE OPTION A SPLIT (Auth Interception)
@@ -83,7 +142,13 @@ app.use('/api/messages', createProxyMiddleware({
 app.use('/api/users', createProxyMiddleware({
     target: AUTH_SERVICE_URL,
     changeOrigin: true,
-    logger: console
+    logger: console,
+    // 🚨 SENIOR MOVE: Inject the correlation ID
+    onProxyReq: (proxyReq, req, res) => {
+        if (req.id) {
+            proxyReq.setHeader('x-correlation-id', req.id);
+        }
+    }
 }));
 
 
@@ -95,13 +160,25 @@ app.use('/api/books', createProxyMiddleware({
     pathRewrite: {
         '^/api/books': '', // This removes '/api/books' so the Catalog service receives '/'
     },
-    logger: console
+    logger: console,
+    // 🚨 SENIOR MOVE: Inject the correlation ID
+    onProxyReq: (proxyReq, req, res) => {
+        if (req.id) {
+            proxyReq.setHeader('x-correlation-id', req.id);
+        }
+    }
 }));
 // 3D. Cart Service Interception
 app.use('/api/cart', createProxyMiddleware({
     target: CART_SERVICE_URL,
     changeOrigin: true,
-    logger: console
+    logger: console,
+    // 🚨 SENIOR MOVE: Inject the correlation ID
+    onProxyReq: (proxyReq, req, res) => {
+        if (req.id) {
+            proxyReq.setHeader('x-correlation-id', req.id);
+        }
+    }
 }));
 
 // 3. CATCH-ALL (Monolith Fallback)

@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../api/axios'; // Import our new custom interceptor
 import { Link } from 'react-router-dom';
 import { FaTrash, FaWhatsapp } from 'react-icons/fa';
 import PageTransition from '../components/PageTransition'; // <--- Import
 const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+//const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
   // 1. Fetch Cart Items
   useEffect(() => {
@@ -16,7 +16,9 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
       const token = JSON.parse(userInfo).token;
 
       try {
-        const { data } = await axios.get(`${API_BASE_URL}/api/users/cart`, {
+        // const { data } = await axios.get(`${API_BASE_URL}/api/users/cart`, {
+                const { data } = await api.get('/api/users/cart', {
+
             headers: { Authorization: `Bearer ${token}` }
         });
         setCartItems(data);
@@ -35,7 +37,9 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
       const token = JSON.parse(userInfo).token;
 
       try {
-          await axios.delete(`${API_BASE_URL}/api/users/cart/${bookId}`, {
+        //   await axios.delete(`${API_BASE_URL}/api/users/cart/${bookId}`, {
+          await api.delete(`/api/users/cart/${bookId}`, {
+
              headers: { Authorization: `Bearer ${token}` }
           });
           // Update UI instantly

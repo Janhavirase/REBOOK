@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import axios from 'axios';
+// import axios from 'axios';
+import api from '../api/axios'; // Import our new custom interceptor
+
 import { FaTrash, FaEnvelope, FaUserShield, FaBook, FaChartPie, FaRupeeSign, FaUserSlash, FaExclamationTriangle } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'; 
@@ -10,7 +12,7 @@ import 'react-toastify/dist/ReactToastify.css'; // <--- CSS IMPORT
 // --- SENIOR DEV BEST PRACTICE: DYNAMIC ENVIRONMENT URL ---
 // If you have a .env file locally, it uses that. 
 // If it's deployed to Render/Vercel, it defaults to the production URL.
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+// const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 const AdminDashboard = () => {
   const [messages, setMessages] = useState([]);
@@ -39,13 +41,16 @@ const AdminDashboard = () => {
 
       try {
         // --- UPDATED TO USE DYNAMIC URL ---
-        const msgRes = await axios.get(`${API_BASE_URL}/api/messages`, config);
+        // const msgRes = await axios.get(`${API_BASE_URL}/api/messages`, config);
+        const msgRes = await api.get('/api/messages', config);
         setMessages(msgRes.data);
 
-        const bookRes = await axios.get(`${API_BASE_URL}/api/books`);
+       // const bookRes = await axios.get(`${API_BASE_URL}/api/books`);
+       const bookRes=await api.get('/api/books');
         setBooks(bookRes.data);
 
-        const userRes = await axios.get(`${API_BASE_URL}/api/users`, config);
+       // const userRes = await axios.get(`${API_BASE_URL}/api/users`, config);
+       const userRes=await api.get('/api/users',config);
         setUsers(userRes.data);
 
       } catch (error) { toast.error("Error fetching dashboard data"); }

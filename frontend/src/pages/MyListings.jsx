@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../api/axios'; // Import our new custom interceptor
 import { Link } from 'react-router-dom';
 import PageTransition from '../components/PageTransition'; // <--- Import
 const MyListings = () => {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const API_BASE_URL = import.meta.env.VITE_API_URL ||'http://localhost:4000';
+  // const API_BASE_URL = import.meta.env.VITE_API_URL ||'http://localhost:4000';
 
   // 1. Fetch the user's books on load
   useEffect(() => {
@@ -16,7 +16,9 @@ const MyListings = () => {
       const token = JSON.parse(userInfo).token;
 
       try {
-        const { data } = await axios.get(`${API_BASE_URL}/api/books/my-books`, {
+        // const { data } = await axios.get(`${API_BASE_URL}/api/books/my-books`, {
+         const { data } = await api.get('/api/books/my-books', {
+
           headers: { Authorization: `Bearer ${token}` },
         });
         setBooks(data);
@@ -37,7 +39,9 @@ const MyListings = () => {
       const token = JSON.parse(userInfo).token;
 
       try {
-        await axios.delete(`${API_BASE_URL}/api/books/${id}`, {
+        // await axios.delete(`${API_BASE_URL}/api/books/${id}`, {
+        await api.delete(`/api/books/${id}`, {
+
           headers: { Authorization: `Bearer ${token}` },
         });
         // Remove the deleted item from the state immediately

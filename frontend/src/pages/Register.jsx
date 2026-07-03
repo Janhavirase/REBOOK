@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 import { FaUser, FaEnvelope, FaLock, FaPhone, FaUserPlus } from 'react-icons/fa';
 import toast from 'react-hot-toast'; // <--- 1. Import Toast
 import PageTransition from '../components/PageTransition'; // <--- Import
@@ -11,7 +11,7 @@ const Register = () => {
     phone: '', 
     password: '' 
   });
-   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+  //  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
  
   const [loading, setLoading] = useState(false);
 
@@ -33,7 +33,8 @@ const Register = () => {
           phone: "+91" + formData.phone 
       };
 
-      const res = await axios.post(`${API_BASE_URL}/api/users/register`, payload);
+      //const res = await axios.post(`${API_BASE_URL}/api/users/register`, payload);
+      const res = await api.post('/api/users/register', payload);
       
       localStorage.setItem('userInfo', JSON.stringify(res.data));
       

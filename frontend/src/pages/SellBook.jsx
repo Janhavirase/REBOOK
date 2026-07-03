@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../api/axios';
 import { useNavigate } from 'react-router-dom';
 import { FaLocationArrow, FaCloudUploadAlt, FaBook, FaMapMarkerAlt, FaCheckCircle, FaRupeeSign, FaTag, FaCamera } from 'react-icons/fa';
 import toast from 'react-hot-toast'; 
@@ -21,7 +21,7 @@ const SellBook = () => {
   const [lat, setLat] = useState('');
   const [lng, setLng] = useState('');
   const [locationStatus, setLocationStatus] = useState('');
-   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+  //  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -121,7 +121,9 @@ const SellBook = () => {
     data.append('image', image); 
 
     try {
-      await axios.post(`${ API_BASE_URL }/api/books/sell`, data, {
+      // await axios.post(`${ API_BASE_URL }/api/books/sell`, data, {
+        await api.post('/api/books/sell', data, {
+
         headers: { 'Content-Type': 'multipart/form-data', 'Authorization': `Bearer ${token}` },
       });
 
@@ -146,7 +148,9 @@ const SellBook = () => {
     
     try {
        // Replace with your URL variable if needed
-       const res = await axios.post(`${API_BASE_URL}/api/ai/generate-description`, {
+      //  const res = await axios.post(`${API_BASE_URL}/api/ai/generate-description`, {
+      const res = await api.post('/api/ai/generate-description', {
+
           title: formData.title,
           author: formData.author,
           condition: formData.condition,
@@ -168,7 +172,9 @@ const SellBook = () => {
     const toastId = toast.loading("Analyzing market rates...");
 
     try {
-       const res = await axios.post(`${API_BASE_URL}/api/ai/estimate-price`, {
+      //  const res = await axios.post(`${API_BASE_URL}/api/ai/estimate-price`, {
+      const res = await api.post('/api/ai/estimate-price', {
+
           title: formData.title,
           author: formData.author,
           condition: formData.condition

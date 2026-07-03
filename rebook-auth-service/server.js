@@ -8,14 +8,38 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Outbox = require('./models/Outbox');
-const relay=require('./workers/relayWorker');
+const relay = require('./workers/relayWorker');
+const { requestLogger, logger } = require('./config/logger'); // 🚨 Import Logger
+
+// 🚨 NEW: Import cookie-parser for secure HTTP-Only cookies
+const cookieParser = require('cookie-parser'); 
+
 // 🚨 NEW: Import Joi Validation Middleware & Schemas
 const validateRequest = require('./middlewares/validateRequest');
 const { registerSchema, loginSchema } = require('./validation/authSchemas');
 
+// 🚨 NEW: Import Opossum for Circuit Breaking
+const CircuitBreaker = require('opossum'); 
+
+const breakerOptions = {
+    timeout: 3000,               // If a request takes longer than 3 seconds, count it as a failure
+    errorThresholdPercentage: 50, // If 50% of requests fail, trip the breaker (OPEN)
+    resetTimeout: 10000          // Wait 10 seconds before trying again (HALF-OPEN)
+};
+
 const app = express();
-app.use(cors());
+app.use(requestLogger);
+
+// 🚨 UPDATED CORS: We must allow credentials so the browser sends the secure cookie
+app.use(cors({
+    origin: ["http://localhost:5173", "https://rebook-gamma.vercel.app"],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
 app.use(express.json()); // Essential for reading login/register data
+app.use(cookieParser()); // 🚨 NEW: Required to read the refresh token cookie
 
 // 1. Connect to Database independently
 mongoose.connect(process.env.MONGO_URI)
@@ -32,18 +56,24 @@ const userSchema = new mongoose.Schema({
     cart: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Book'
-    }]
+    }],
+    // 🚨 NEW: Array to store active refresh tokens for the user
+    refreshTokens: { type: [String], default: [] } 
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);
 
-// 3. Helper Function
-const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+// 3. Helper Functions (UPDATED FOR ROTATION)
+// 🚨 TIME TRAVEL TEST ACTIVATED: Expires in 10 seconds! 🚨
+const generateAccessToken = (id) => {
+    return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '15m' }); // <-- Change back to '15m' later
 };
 
-// 4. Extract controllers (Exactly as you wrote them)
-// 🚨 NEW: Injected validateRequest(registerSchema) middleware
+const generateRefreshToken = (id) => {
+    return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+};
+
+// 4. Extract controllers (Exactly as you wrote them, with cookie logic added)
 app.post('/register', validateRequest(registerSchema), async (req, res) => {
     try {
         const { name, email, password, phone } = req.body;
@@ -55,11 +85,26 @@ app.post('/register', validateRequest(registerSchema), async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        const user = await User.create({ name, email, phone, password: hashedPassword });
+        // Generate the long-lived refresh token
+        const newRefreshToken = generateRefreshToken(email); // Or user ID
+
+        // 🚨 Save it to the database
+        const user = await User.create({ 
+            name, email, phone, password: hashedPassword, refreshTokens: [newRefreshToken] 
+        });
 
         if (user) {
+            // 🚨 Set the secure HTTP-Only cookie
+            res.cookie('jwt', newRefreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'None',
+                maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            });
+
             res.status(201).json({
-                _id: user._id, name: user.name, email: user.email, phone: user.phone, token: generateToken(user._id),
+                _id: user._id, name: user.name, email: user.email, phone: user.phone, 
+                token: generateAccessToken(user._id), // Send the 10-second token
             });
         } else {
             res.status(400).json({ message: 'Invalid user data' });
@@ -67,15 +112,31 @@ app.post('/register', validateRequest(registerSchema), async (req, res) => {
     } catch (error) { res.status(500).json({ message: 'Server Error' }); }
 });
 
-// 🚨 NEW: Injected validateRequest(loginSchema) middleware
 app.post('/login', validateRequest(loginSchema), async (req, res) => {
     try {
         const { email, password } = req.body;
         const user = await User.findOne({ email });
-          console.log("User found:", user ? user.email : "No user found");
+        console.log("User found:", user ? user.email : "No user found");
+        
         if (user && (await bcrypt.compare(password, user.password))) {
+            
+            const newRefreshToken = generateRefreshToken(user._id);
+            
+            // 🚨 Add the new token to the array and save
+            user.refreshTokens.push(newRefreshToken);
+            await user.save();
+
+            // 🚨 Bake the secure cookie
+            res.cookie('jwt', newRefreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'None',
+                maxAge: 7 * 24 * 60 * 60 * 1000
+            });
+
             res.json({
-                _id: user._id, name: user.name, email: user.email, phone: user.phone, isAdmin: user.isAdmin, token: generateToken(user._id),
+                _id: user._id, name: user.name, email: user.email, phone: user.phone, isAdmin: user.isAdmin, 
+                token: generateAccessToken(user._id), // Send the 10-second token
             });
         } else {
             res.status(401).json({ message: 'Invalid email or password' });
@@ -83,11 +144,76 @@ app.post('/login', validateRequest(loginSchema), async (req, res) => {
     } catch (error) { res.status(500).json({ message: 'Server Error' }); }
 });
 
+// 🚨 NEW ROUTE: The Refresh Interceptor Target 🚨
+app.get('/api/users/refresh', async (req, res) => { // Path updated to match frontend call
+    const cookies = req.cookies;
+    if (!cookies?.jwt) return res.status(401).json({ message: 'Unauthorized' });
+    
+    const refreshToken = cookies.jwt;
+    res.clearCookie('jwt', { httpOnly: true, sameSite: 'None', secure: process.env.NODE_ENV === 'production' });
+
+    const foundUser = await User.findOne({ refreshTokens: refreshToken });
+
+    // Reuse detection!
+    if (!foundUser) {
+        jwt.verify(refreshToken, process.env.JWT_SECRET, async (err, decoded) => {
+            if (err) return res.status(403).json({ message: 'Forbidden' });
+            console.log("⚠️ Token reuse detected! Wiping grants.");
+            await User.findByIdAndUpdate(decoded.id, { refreshTokens: [] });
+        });
+        return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    const newRefreshTokenArray = foundUser.refreshTokens.filter(rt => rt !== refreshToken);
+
+    jwt.verify(refreshToken, process.env.JWT_SECRET, async (err, decoded) => {
+        if (err) {
+            foundUser.refreshTokens = [...newRefreshTokenArray];
+            await foundUser.save();
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
+        const newRefreshToken = generateRefreshToken(foundUser._id);
+        foundUser.refreshTokens = [...newRefreshTokenArray, newRefreshToken];
+        await foundUser.save();
+
+        res.cookie('jwt', newRefreshToken, {
+            httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'None', maxAge: 7 * 24 * 60 * 60 * 1000
+        });
+
+        res.json({ token: generateAccessToken(foundUser._id) });
+    });
+});
+
 // --- NEW ROUTE: Get Public Profile ---
+
+// --- 🚨 CIRCUIT BREAKER SETUP FOR CATALOG CALL ---
+const fetchSellerBooks = async (sellerId) => {
+    const CATALOG_URL = process.env.CATALOG_SERVICE_URL || 'http://localhost:4003';
+    const response = await axios.get(`${CATALOG_URL}/seller/${sellerId}`);
+    return response.data;
+};
+
+const catalogBreaker = new CircuitBreaker(fetchSellerBooks, breakerOptions);
+
+catalogBreaker.fallback(() => {
+    console.warn("⚠️ Catalog Breaker OPEN: Failing fast, returning empty books.");
+    return []; 
+});
+
+catalogBreaker.on('open', () => console.log('🔴 Circuit Breaker Tripped! (OPEN)'));
+catalogBreaker.on('halfOpen', () => console.log('🟡 Testing Catalog Service... (HALF-OPEN)'));
+catalogBreaker.on('close', () => console.log('🟢 Catalog Service Restored. (CLOSED)'));
+// ------------------------------------------------
 
 // --- MICROSERVICE AGGREGATOR: Get Public Profile ---
 app.get('/profile/:id', async (req, res) => {
     try {
+        // Validation check so bad IDs don't crash the server!
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ message: 'Invalid User ID format' });
+        }
+
         // 1. Fetch the User from the Auth Database
         const user = await User.findById(req.params.id).select('-password -cart');
         
@@ -95,19 +221,17 @@ app.get('/profile/:id', async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // 2. Fetch the Books from the Catalog Microservice (Network Join)
+        // 2. Fetch the Books from the Catalog Microservice using Circuit Breaker!
         let books = [];
         try {
-            // The Auth service internally calls the Catalog service on Port 4003
-            const bookResponse = await axios.get(`http://localhost:4003/seller/${req.params.id}`);
-            books = bookResponse.data;
+            // Using Opossum Breaker to fire the request
+            books = await catalogBreaker.fire(req.params.id);
         } catch (bookError) {
             console.error("⚠️ Catalog Service unreachable. Loading profile without books.");
             // We don't crash the server here, we just return an empty array for books so the profile still loads!
         }
 
-        // 3. Fetch the Reviews (Apply the exact same pattern!)
-      // 3. Fetch the Reviews (Direct DB call with population)
+        // 3. Fetch the Reviews (Direct DB call with population)
         let reviews = [];
         try {
             reviews = await Review.find({ targetUser: req.params.id })
@@ -242,6 +366,7 @@ app.delete(['/:id', '/api/users/:id'], protect, admin, async (req, res) => {
 const PORT = process.env.PORT || 4002;
 app.listen(PORT, () => {
     console.log(`🔐 ReBook Auth Microservice safely running on Port ${PORT}`);
+    logger.info(`📦 Rebook Auth Service running on ${PORT}`);
 });
 
 relay();

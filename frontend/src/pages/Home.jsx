@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../api/axios'; // Import our new custom interceptor
 import { Link } from 'react-router-dom';
 import { FaSearch, FaLocationArrow, FaList, FaMapMarkedAlt, FaTimes } from 'react-icons/fa';
 import BookRow from '../components/BookRow';       
@@ -12,7 +12,7 @@ const Home = () => {
   const [nearbyBooks, setNearbyBooks] = useState([]);
   const [recentBooks, setRecentBooks] = useState([]); 
   const [searchResults, setSearchResults] = useState([]); 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+//   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
   // --- Live Search States ---
   const [suggestions, setSuggestions] = useState([]); 
@@ -39,11 +39,11 @@ const Home = () => {
 
   useEffect(() => {
     const fetchBooks = async () => {
-      let apiUrl = `${API_BASE_URL}/api/books`;
+      let apiUrl = '/api/books';
       
       try {
         setLoading(true);
-        const recentRes = await axios.get(apiUrl);
+        const recentRes = await api.get(apiUrl);
         setRecentBooks(recentRes.data);
         setLoading(false); 
         setNearbyLoading(true); 
@@ -61,7 +61,9 @@ const Home = () => {
                setLocationStatus('Nearby');
                try {
                  // Send the rounded, stable coordinates to the Gateway
-                 const nearbyRes = await axios.get(`${apiUrl}?lat=${safeLat}&lng=${safeLng}`);
+                //  const nearbyRes = await axios.get(`${apiUrl}?lat=${safeLat}&lng=${safeLng}`);
+            const nearbyRes = await api.get(`${apiUrl}?lat=${safeLat}&lng=${safeLng}`);
+
                  setNearbyBooks(nearbyRes.data);
                } catch (err) {
                  console.error("GPS Error", err);

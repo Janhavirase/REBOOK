@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 import BookCard from '../components/BookCard';
 import { FaStar, FaUserCircle } from 'react-icons/fa';
 import PageTransition from '../components/PageTransition'; // <--- Import
@@ -10,7 +10,7 @@ const SellerProfile = () => {
   const [reviews, setReviews] = useState([]);
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
-     const API_BASE_URL = import.meta.env.VITE_API_URL ||'http://localhost:4000';
+    //  const API_BASE_URL = import.meta.env.VITE_API_URL ||'http://localhost:4000';
 
   // Review Form
   const [rating, setRating] = useState(5);
@@ -20,7 +20,9 @@ const SellerProfile = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data } = await axios.get(`${API_BASE_URL}/api/users/profile/${id}`);
+        // const { data } = await axios.get(`${API_BASE_URL}/api/users/profile/${id}`);
+        const { data } = await api.get(`/api/users/profile/${id}`);
+
         setProfile(data.user);
         setBooks(data.books);
         setReviews(data.reviews);
@@ -35,7 +37,9 @@ const SellerProfile = () => {
     if (!currentUser) return alert("Login to write a review");
 
     try {
-        await axios.post(`${API_BASE_URL}/api/users/${id}/reviews`, 
+        // await axios.post(`${API_BASE_URL}/api/users/${id}/reviews`, 
+        await api.post(`/api/users/${id}/reviews`, 
+
             { rating, comment },
             { headers: { Authorization: `Bearer ${currentUser.token}` } }
         );

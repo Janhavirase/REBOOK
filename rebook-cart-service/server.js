@@ -4,9 +4,19 @@ const express = require('express');
 const cors = require('cors');
 const redis = require('redis');
 const axios = require('axios'); // For inter-service communication
+const { requestLogger, logger } = require('./config/logger'); // 🚨 Import Logger
 
 const app = express();
-app.use(cors());
+app.use(requestLogger);
+app.use(cors({
+    origin: [
+        "http://localhost:5173",
+        "https://rebook-gamma.vercel.app" // Keep for production!
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
 app.use(express.json());
 
 // 1. Connect to Redis
@@ -93,4 +103,6 @@ app.post('/remove', async (req, res) => {
 const PORT = process.env.PORT || 4004;
 app.listen(PORT, () => {
     console.log(`🛒 ReBook Cart Microservice running on Port ${PORT}`);
+    logger.info(`📦 Rebook Cart Service running on ${PORT}`);
+    
 });
