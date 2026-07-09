@@ -158,8 +158,7 @@ const BookDetails = () => {
   if (!book) return <div className="text-center mt-20 text-red-500 font-bold">Book not found!</div>;
 
   const sellerId = book.seller._id || book.seller;
-
- return (
+return (
     <PageTransition>
     <div className="container mx-auto p-4 md:p-8 max-w-6xl">
       
@@ -300,3 +299,6 @@ const BookDetails = () => {
     </div>
     </PageTransition>
   );
+};
+
+export default BookDetails;
