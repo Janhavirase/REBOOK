@@ -84,7 +84,7 @@ const SellBook = () => {
       (error) => {
         console.error("GPS Watch Error:", error);
       },
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+      { enableHighAccuracy: false, maximumAge: 0, timeout: 5000 }
     );
 
     // 2. Stop watching after 6 seconds and process the absolute best reading we got
