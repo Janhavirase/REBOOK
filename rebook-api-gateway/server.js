@@ -88,6 +88,8 @@ const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL || 'http://localhost
 app.use('/api/ai', createProxyMiddleware({
     target: AI_SERVICE_URL,
     changeOrigin: true,
+    proxyTimeout: 60000,
+    timeout: 60000,
     logger: console,
     // 🚨 SENIOR MOVE: Inject the correlation ID into the outgoing headers for Distributed Tracing
     onProxyReq: (proxyReq, req, res) => {
@@ -101,6 +103,8 @@ app.use('/api/ai', createProxyMiddleware({
 app.use('/api/payment', createProxyMiddleware({
     target: PAYMENT_SERVICE_URL,
     changeOrigin: true,
+    proxyTimeout: 60000,
+    timeout: 60000,
     logger: console,
     // 🚨 SENIOR MOVE: Inject the correlation ID
     onProxyReq: (proxyReq, req, res) => {
@@ -114,6 +118,8 @@ app.use('/api/payment', createProxyMiddleware({
 app.use('/api/messages', createProxyMiddleware({
     target: MESSAGE_SERVICE_URL,
     changeOrigin: true,
+    proxyTimeout: 60000,
+    timeout: 60000,
     logger: console,
     // 🚨 SENIOR MOVE: Inject the correlation ID
     onProxyReq: (proxyReq, req, res) => {
@@ -142,6 +148,8 @@ app.use('/api/messages', createProxyMiddleware({
 app.use('/api/users', createProxyMiddleware({
     target: AUTH_SERVICE_URL,
     changeOrigin: true,
+    proxyTimeout: 60000,
+    timeout: 60000,
     logger: console,
     // 🚨 SENIOR MOVE: Inject the correlation ID
     onProxyReq: (proxyReq, req, res) => {
@@ -157,6 +165,8 @@ app.use('/api/users', createProxyMiddleware({
 app.use('/api/books', createProxyMiddleware({
     target: CATALOG_SERVICE_URL,
     changeOrigin: true,
+proxyTimeout: 60000,
+    timeout: 60000,
     pathRewrite: {
         '^/api/books': '', // This removes '/api/books' so the Catalog service receives '/'
     },
@@ -172,6 +182,8 @@ app.use('/api/books', createProxyMiddleware({
 app.use('/api/cart', createProxyMiddleware({
     target: CART_SERVICE_URL,
     changeOrigin: true,
+    proxyTimeout: 60000,
+    timeout: 60000,
     logger: console,
     // 🚨 SENIOR MOVE: Inject the correlation ID
     onProxyReq: (proxyReq, req, res) => {
