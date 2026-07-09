@@ -1,3 +1,20 @@
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import L from 'leaflet';
+// You need these for the map icons to render correctly in production
+import 'leaflet/dist/leaflet.css';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+// Fix for default Leaflet icon not showing up in React
+let DefaultIcon = L.icon({
+    iconUrl: markerIcon,
+    shadowUrl: markerShadow,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41]
+});
+L.Marker.prototype.options.icon = DefaultIcon;
+
+
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios'; // Import our new custom interceptor
@@ -7,6 +24,15 @@ import toast from 'react-hot-toast';
 import BookCard from '../components/BookCard'; 
 import PageTransition from '../components/PageTransition'; 
 
+
+const MapDisplay = ({ lat, lng }) => (
+    <div className="h-48 w-full rounded-xl overflow-hidden border border-gray-200 mt-4 shadow-inner">
+        <MapContainer center={[lat, lng]} zoom={15} style={{ height: '100%', width: '100%' }}>
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+            <Marker position={[lat, lng]} />
+        </MapContainer>
+    </div>
+);
 const BookDetails = () => {
   const { id } = useParams(); 
   const navigate = useNavigate();
@@ -171,9 +197,33 @@ const BookDetails = () => {
             }`}>
                ✨ {book.condition}
             </span>
-            <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-bold flex items-center">
-              <FaMapMarkerAlt className="mr-1 text-red-500" /> {book.city}
-            </span>
+           {/* Replace the old City badge with this expanded location block */}
+<div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mt-4">
+    <div className="flex items-center gap-2 text-gray-800 font-bold mb-2">
+        <FaMapMarkerAlt className="text-red-500" /> Pickup Zone
+    </div>
+    <p className="text-sm text-gray-600 font-medium">{book.location?.landmark}</p>
+    <p className="text-xs text-gray-400 capitalize">{book.city}</p>
+    
+    {/* Only show the map if coordinates exist */}
+    {book.location?.coordinates && (
+        <MapDisplay 
+            lat={book.location.coordinates[1]} 
+            lng={book.location.coordinates[0]} 
+        />
+    )}
+    {/* Google Maps Button */}
+    {book.location?.coordinates && (
+        <a 
+            href={`https://www.google.com/maps/dir/?api=1&destination=${book.location.coordinates[1]},${book.location.coordinates[0]}`}
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="mt-4 w-full flex items-center justify-center gap-2 bg-slate-900 text-white py-3 rounded-lg text-sm font-bold hover:bg-black transition shadow-md"
+        >
+            <FaMapMarkerAlt /> Get Directions
+        </a>
+    )}
+</div>
           </div>
 
           <hr className="border-gray-200 mb-6" />
