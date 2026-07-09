@@ -159,7 +159,7 @@ const BookDetails = () => {
 
   const sellerId = book.seller._id || book.seller;
 
-  return (
+ return (
     <PageTransition>
     <div className="container mx-auto p-4 md:p-8 max-w-6xl">
       
@@ -197,33 +197,34 @@ const BookDetails = () => {
             }`}>
                ✨ {book.condition}
             </span>
-           {/* Replace the old City badge with this expanded location block */}
-<div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mt-4">
-    <div className="flex items-center gap-2 text-gray-800 font-bold mb-2">
-        <FaMapMarkerAlt className="text-red-500" /> Pickup Zone
-    </div>
-    <p className="text-sm text-gray-600 font-medium">{book.location?.landmark}</p>
-    <p className="text-xs text-gray-400 capitalize">{book.city}</p>
-    
-    {/* Only show the map if coordinates exist */}
-    {book.location?.coordinates && (
-        <MapDisplay 
-            lat={book.location.coordinates[1]} 
-            lng={book.location.coordinates[0]} 
-        />
-    )}
-    {/* Google Maps Button */}
-    {book.location?.coordinates && (
-        <a 
-            href={`https://www.google.com/maps/dir/?api=1&destination=${book.location.coordinates[1]},${book.location.coordinates[0]}`}
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="mt-4 w-full flex items-center justify-center gap-2 bg-slate-900 text-white py-3 rounded-lg text-sm font-bold hover:bg-black transition shadow-md"
-        >
-            <FaMapMarkerAlt /> Get Directions
-        </a>
-    )}
-</div>
+          </div>
+
+          {/* Replace the old City badge with this expanded location block */}
+          <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6">
+              <div className="flex items-center gap-2 text-gray-800 font-bold mb-2">
+                  <FaMapMarkerAlt className="text-red-500" /> Pickup Zone
+              </div>
+              <p className="text-sm text-gray-600 font-medium">{book.location?.landmark}</p>
+              <p className="text-xs text-gray-400 capitalize">{book.city}</p>
+              
+              {/* Only show the map if coordinates exist */}
+              {book.location?.coordinates && (
+                  <MapDisplay 
+                      lat={book.location.coordinates[1]} 
+                      lng={book.location.coordinates[0]} 
+                  />
+              )}
+              {/* Google Maps Button */}
+              {book.location?.coordinates && (
+                  <a 
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${book.location.coordinates[1]},${book.location.coordinates[0]}`}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="mt-4 w-full flex items-center justify-center gap-2 bg-slate-900 text-white py-3 rounded-lg text-sm font-bold hover:bg-black transition shadow-md"
+                  >
+                      <FaMapMarkerAlt /> Get Directions
+                  </a>
+              )}
           </div>
 
           <hr className="border-gray-200 mb-6" />
@@ -299,6 +300,3 @@ const BookDetails = () => {
     </div>
     </PageTransition>
   );
-};
-
-export default BookDetails;
