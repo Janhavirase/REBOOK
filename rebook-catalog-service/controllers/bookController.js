@@ -134,7 +134,7 @@ const getMyBooks = async (req, res) => {
 // @route   POST /api/books/sell
 const createBook = async (req, res) => {
   try {
-    const { title, author, price, condition, description, category, city, latitude, longitude } = req.body;
+    const { title, author, price, condition, description, category, city, latitude, longitude,landmark } = req.body;
 
     if (!req.file) {
       return res.status(400).json({ message: 'Please upload an image' });
@@ -143,13 +143,15 @@ const createBook = async (req, res) => {
     // Prepare Location Object (GeoJSON)
     let locationData = {
         type: 'Point',
-        coordinates: [0, 0] // Default
+        coordinates: [0, 0], // Default
+        landmark: landmark || "No landmark specified" // 🚨 ADD THIS
     };
 
     if (latitude && longitude) {
         locationData = {
             type: 'Point',
-            coordinates: [parseFloat(longitude), parseFloat(latitude)]
+            coordinates: [parseFloat(longitude), parseFloat(latitude)],
+            landmark: landmark
         };
     }
 
