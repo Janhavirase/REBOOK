@@ -33,59 +33,85 @@ const SellBook = () => {
 
   // --- LOCATION LOGIC ---
  // --- LOCATION LOGIC ---
+// --- LOCATION LOGIC ---
   const getLocation = () => {
     setLocationStatus('Locating...');
-    const toastId = toast.loading('Triangulating position & finding city...');
+    // Updated the toast to let the user know why it's taking a few seconds
+    const toastId = toast.loading('Finding best GPS signal (wait 6s)...');
 
-    const options = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const currentLat = position.coords.latitude;
-          const currentLng = position.coords.longitude;
-          
-          setLat(currentLat);
-          setLng(currentLng);
-
-      try {
-            // 🚨 FIX: Use native fetch() instead of Axios to avoid credential conflicts
-            // Added '&accept-language=en' so it always returns the city in English
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentLat}&lon=${currentLng}&accept-language=en`);
-            const data = await response.json();
-
-            if (data && data.address) {
-                const address = data.address;
-                // Extract the best matching area name
-                const detectedCity = address.city || address.town || address.village || address.state_district || address.county || "Unknown Location";
-
-                // Auto-fill the formData state with the detected city
-                setFormData(prev => ({ ...prev, city: detectedCity }));
-
-                setLocationStatus('GPS Locked');
-                toast.success(`Location Locked: ${detectedCity} 📍`, { id: toastId });
-            } else {
-                throw new Error("No address found at these coordinates");
-            }
-            
-          } catch (geoError) {
-            console.error("Geocoding failed", geoError);
-            setLocationStatus('GPS Locked');
-            toast.success('Coordinates found, but please enter city manually.', { id: toastId });
-          }
-        },
-        (error) => {
-          console.error(error);
-          setLocationStatus('Permission Denied');
-          toast.error('Location Access Denied', { id: toastId });
-        },
-        options 
-      );
-    } else {
-      toast.error('GPS not supported', { id: toastId });
+    if (!navigator.geolocation) {
+      toast.error('GPS not supported on this device', { id: toastId });
+      setLocationStatus('');
+      return;
     }
-  };
 
+    let best = null;
+
+    // 1. Start watching the GPS position rapidly
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        // If we don't have a reading yet, OR if this new reading has a smaller accuracy radius (better)
+        if (!best || position.coords.accuracy < best.coords.accuracy) {
+          best = position;
+        }
+      },
+      (error) => {
+        console.error("GPS Watch Error:", error);
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+    );
+
+    // 2. Stop watching after 6 seconds and process the absolute best reading we got
+    setTimeout(async () => {
+      navigator.geolocation.clearWatch(watchId); // Turn off the GPS tracker
+
+      if (!best) {
+        setLocationStatus('Error');
+        toast.error('Could not get a stable location. Please enter city manually.', { id: toastId });
+        return;
+      }
+
+      const { latitude, longitude, accuracy } = best.coords;
+      
+      setLat(latitude);
+      setLng(longitude);
+
+      // 3. Accuracy Gate Check
+      let isHighAccuracy = accuracy <= 100;
+      if (!isHighAccuracy) {
+          setLocationStatus('Low Accuracy');
+          // We don't block them, but we warn them the pin might be far away
+          toast.error(`Low Accuracy (~${Math.round(accuracy)}m). Pin might be off.`, { id: toastId, duration: 4000 });
+      } else {
+          setLocationStatus('GPS Locked');
+      }
+
+      // 4. Reverse Geocoding (Getting the City Name)
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=en`);
+        const data = await response.json();
+
+        if (data && data.address) {
+          const address = data.address;
+          const detectedCity = address.city || address.town || address.village || address.state_district || address.county || "Unknown Location";
+          
+          setFormData(prev => ({ ...prev, city: detectedCity }));
+
+          // Final success message depends on the accuracy check
+          if (isHighAccuracy) {
+              toast.success(`Location Locked: ${detectedCity} 📍 (±${Math.round(accuracy)}m)`, { id: toastId });
+          } else {
+              toast.success(`Found ${detectedCity}, but please verify the area manually.`, { id: toastId });
+          }
+        } else {
+          throw new Error("No address found at these coordinates");
+        }
+      } catch (geoError) {
+        console.error("Geocoding failed", geoError);
+        toast.error('Coordinates found, but city detection failed. Enter city manually.', { id: toastId });
+      }
+    }, 6000); // The 6-second timer
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
