@@ -1,3 +1,17 @@
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+// We also need to define a custom icon because React-Leaflet sometimes breaks default icons
+import L from 'leaflet';
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconUrl: markerIcon,
+    iconRetinaUrl: markerIcon2x,
+    shadowUrl: markerShadow,
+});
+
 import React, { useState } from 'react';
 import api from '../api/axios';
 import { useNavigate } from 'react-router-dom';
@@ -5,11 +19,23 @@ import { FaLocationArrow, FaCloudUploadAlt, FaBook, FaMapMarkerAlt, FaCheckCircl
 import toast from 'react-hot-toast'; 
 import PageTransition from '../components/PageTransition'; 
 
+
+// This component listens for clicks on the map and drops a pin
+const MapClickListener = ({ setLat, setLng, setLocationStatus }) => {
+  useMapEvents({
+    click(e) {
+      setLat(e.latlng.lat);
+      setLng(e.latlng.lng);
+      setLocationStatus('Pin Dropped');
+    },
+  });
+  return null;
+};
 const SellBook = () => {
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
-    title: '', author: '', price: '', condition: 'Good', description: '', category: 'Education', city: '' 
+    title: '', author: '', price: '', condition: 'Good', description: '', category: 'Education', city: '' ,landmark: ''
   });
   
   const [image, setImage] = useState(null);
@@ -124,7 +150,11 @@ const SellBook = () => {
       setLoading(false);
       return;
     }
-
+if (!formData.landmark) {
+    toast.error("Please provide a nearby landmark/area for pickup.");
+    setLoading(false);
+    return;
+}
     if (!lat || !lng) {
         toast.error("Please click 'Detect Location' first!", { icon: '🗺️' });
         setLoading(false);
@@ -145,6 +175,7 @@ const SellBook = () => {
     data.append('latitude', lat);
     data.append('longitude', lng);
     data.append('image', image); 
+    data.append('landmark', formData.landmark); // <--- Add this line
 
     try {
       // await axios.post(`${ API_BASE_URL }/api/books/sell`, data, {
@@ -359,37 +390,64 @@ const SellBook = () => {
           </div>
 
           {/* 4. Location (Geotagging) */}
-          <div className="space-y-4 pt-2">
-             <h3 className="text-slate-800 font-bold text-lg border-b border-gray-100 pb-2">4. Pickup Location</h3>
-             
-             <div className="bg-gray-50 p-4 border border-gray-200 rounded-md flex flex-col sm:flex-row gap-4 items-end">
-                  <div className="flex-1 w-full">
-                       <label className="block text-sm font-semibold text-gray-700 mb-1">City / Area <span className="text-red-500">*</span></label>
-                      <input 
-  type="text" 
-  name="city" 
-  value={formData.city} // 🚨 THIS IS REQUIRED FOR AUTO-FILL TO SHOW UP
-  placeholder="Enter City Name (e.g. Mumbai)" 
-  onChange={handleChange} 
-  required 
-  className="w-full p-2.5 bg-white border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm outline-none text-sm text-gray-900" 
-/>
-                  </div>
-                  
-                  <button 
-                    type="button" 
-                    onClick={getLocation}
-                    className={`px-4 py-2.5 rounded-md font-medium text-sm border shadow-sm flex items-center gap-2 whitespace-nowrap transition-all ${
-                        locationStatus === 'GPS Locked' 
-                        ? 'bg-emerald-50 border-emerald-500 text-emerald-700' 
-                        : 'bg-white border-gray-300 text-slate-700 hover:bg-gray-100 hover:border-gray-400'
-                    }`}
-                  >
-                    {locationStatus === 'GPS Locked' ? <FaCheckCircle /> : <FaLocationArrow />}
-                    {locationStatus === 'GPS Locked' ? 'GPS Locked' : 'Detect Location'}
-                  </button>
-             </div>
-          </div>
+         {/* 4. Pickup Location (3-Tier System) */}
+<div className="space-y-4 pt-2">
+    <h3 className="text-slate-800 font-bold text-lg border-b border-gray-100 pb-2">4. Pickup Location</h3>
+    <p className="text-sm text-gray-500">For your privacy, exact addresses are hidden. Drop a pin on a nearby public area or your general neighborhood.</p>
+    
+    {/* Map Container */}
+    <div className="h-64 w-full rounded-md border border-gray-300 overflow-hidden z-0 relative">
+        <MapContainer 
+            center={[20.5937, 78.9629]} // Default center (India)
+            zoom={4} 
+            style={{ height: '100%', width: '100%' }}
+        >
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+            
+            {/* If lat/lng exist, render the marker */}
+            {lat && lng && <Marker position={[lat, lng]} />}
+            
+            {/* Listens for user clicking on the map to drop a new pin */}
+            <MapClickListener setLat={setLat} setLng={setLng} setLocationStatus={setLocationStatus} />
+        </MapContainer>
+
+        {/* Floating Auto-Detect Button over the map */}
+        <button 
+            type="button" 
+            onClick={getLocation} // Your existing GPS function
+            className="absolute bottom-4 right-4 z-[400] bg-white text-blue-600 px-4 py-2 rounded-full shadow-md font-bold text-sm flex items-center gap-2 hover:bg-gray-50"
+        >
+            <FaLocationArrow /> Auto-Detect
+        </button>
+    </div>
+
+    {/* Landmark & City Inputs */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Public Landmark <span className="text-red-500">*</span></label>
+            <input 
+                type="text" 
+                name="landmark" 
+                placeholder="e.g. Near FC Road Starbucks" 
+                onChange={handleChange} 
+                required 
+                className="w-full p-2.5 bg-white border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm outline-none text-sm" 
+            />
+        </div>
+        <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">City <span className="text-red-500">*</span></label>
+            <input 
+                type="text" 
+                name="city" 
+                value={formData.city} 
+                placeholder="Auto-filled or type manually" 
+                onChange={handleChange} 
+                required 
+                className="w-full p-2.5 bg-white border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm outline-none text-sm" 
+            />
+        </div>
+    </div>
+</div>
 
           {/* Submit Footer */}
           <div className="pt-6 border-t border-gray-100">
