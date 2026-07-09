@@ -49,6 +49,11 @@ const bookSchema = mongoose.Schema(
       coordinates: {
         type: [Number], // Format: [Longitude, Latitude]
         required: true
+      },
+      landmark: { 
+        type: String, 
+        required: true, 
+        trim: true 
       }
     },
 
